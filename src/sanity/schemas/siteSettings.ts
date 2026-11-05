@@ -64,6 +64,19 @@ export const siteSettings = defineType({
       ],
     }),
 
+    // ─── SOBRE MÍ ───
+    defineField({
+      name: 'about',
+      title: 'Sobre mí',
+      type: 'object',
+      fields: [
+        defineField({ name: 'title', title: 'Título', type: 'string', description: 'Ej: "Sobre mí"' }),
+        defineField({ name: 'text', title: 'Texto', type: 'text', rows: 5 }),
+        defineField({ name: 'cvUrl', title: 'Link al CV (PDF)', type: 'url', description: 'Si queda vacío se usa /cv.pdf (archivo en la carpeta public).', validation: (rule) => rule.uri({ allowRelative: true }) }),
+        defineField({ name: 'cvLabel', title: 'Texto del botón de CV', type: 'string', description: 'Ej: "Descargar CV"' }),
+      ],
+    }),
+
     // ─── CONTACTO ───
     defineField({
       name: 'contact',

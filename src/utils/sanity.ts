@@ -5,6 +5,7 @@ import { sanityClient } from 'sanity:client';
 const SETTINGS_QUERY = /* groq */ `*[_id == "siteSettings"][0]{
   seo { title, description },
   hero { greeting, title, subtitle, ctaLabel },
+  about { title, text, cvUrl, cvLabel },
   contact { tagline, description, email, ctaLabel },
   footer { copyright, navLinks[] { _key, label, href } },
   socialLinks[] { _key, platform, url }
@@ -16,6 +17,7 @@ const PROJECTS_QUERY = /* groq */ `*[_type == "project"] | order(order asc) {
   description,
   content,
   tags,
+  icon,
   link,
   "mainImage": mainImage.asset->url,
   "gallery": gallery[].asset->url,
@@ -28,6 +30,7 @@ const PROJECTS_QUERY = /* groq */ `*[_type == "project"] | order(order asc) {
 export interface SiteSettings {
   seo?: { title?: string; description?: string };
   hero?: { greeting?: string; title?: string; subtitle?: string; ctaLabel?: string };
+  about?: { title?: string; text?: string; cvUrl?: string; cvLabel?: string };
   contact?: { tagline?: string; description?: string; email?: string; ctaLabel?: string };
   footer?: { copyright?: string; navLinks?: { _key: string; label: string; href: string }[] };
   socialLinks?: { _key: string; platform: string; url: string }[];
@@ -39,6 +42,7 @@ export interface Project {
   description: string;
   content?: any[];
   tags?: string[];
+  icon?: string;
   link?: string;
   mainImage?: string;
   gallery?: string[];
@@ -82,6 +86,12 @@ export async function getSiteData(): Promise<SiteData> {
       title: rawSettings?.seo?.title ?? 'Home',
       description: rawSettings?.seo?.description ?? 'Frontend Developer especializado en crear interfaces modernas, minimalistas y altamente performantes. Explora mis proyectos y descubre cómo trabajo.',
     },
+    about: {
+      title: rawSettings?.about?.title ?? 'Sobre mí',
+      text: rawSettings?.about?.text ?? 'Soy Lucas, frontend developer. Me importa que una interfaz se entienda a primera vista y se sienta rápida: cuido la jerarquía, el ritmo y los detalles de movimiento. Trabajo con Astro, React y TypeScript, y me animo a tocar el backend cuando el proyecto lo pide.',
+      cvUrl: rawSettings?.about?.cvUrl ?? '/cv.pdf',
+      cvLabel: rawSettings?.about?.cvLabel ?? 'Descargar CV',
+    },
     contact: {
       tagline: rawSettings?.contact?.tagline ?? 'Hagamos equipo',
       description: rawSettings?.contact?.description ?? 'Estoy con disponibilidad para sumarme a nuevos proyectos. Ya sea que tengas una idea en mente o simplemente quieras charlar sobre código o diseño, ¡escribime!',
@@ -106,35 +116,6 @@ export async function getSiteData(): Promise<SiteData> {
 
   return {
     settings,
-    projects: projects.length > 0 ? projects : [
-      { 
-        _id: '1', 
-        title: 'Eco Flow', 
-        description: 'Una guía minimalista para una vida consciente. Desarrollada con Astro y Tailwind puro, optimizada cien por ciento para rendimiento brutal y accesibilidad total. El diseño se centra en la calma visual utilizando una paleta neutra y tipografías elegantes que invitan a la lectura pausada.', 
-        tags: ['Astro', 'Tailwind', 'UX Design', 'Minimalism', 'Performance'],
-        link: 'https://eco-flow.demo',
-        mainImage: 'https://images.unsplash.com/photo-1542241193-41c304d53894?auto=format&fit=crop&q=80&w=1200',
-        gallery: [
-          'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=800',
-          'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=800'
-        ]
-      },
-      { 
-        _id: '2', 
-        title: 'Serene Space', 
-        description: 'Dashboard para una app de mindfulness. Arquitectura de estados globales complejos manteniendo la fluidez en cada micro-interacción de la interfaz. Implementamos gráficas interactivas que visualizan el progreso del usuario de manera orgánica y no estresante.', 
-        tags: ['React', 'Framer Motion', 'State Mgmt', 'UI Design'],
-        link: 'https://serene-space.demo',
-        mainImage: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1200'
-      },
-      { 
-        _id: '3', 
-        title: 'Quiet Commerce', 
-        description: 'E-commerce planteado para reducir la fricción visual y la carga cognitiva. Escalamos la conversión en ventas en un ambiente libre de ruidos innecesarios. El proceso de checkout fue rediseñado totalmente bajo principios de psicología cognitiva.', 
-        tags: ['Next.js', 'Stripe', 'Cognitive Psychology'],
-        link: 'https://quiet-commerce.demo',
-        mainImage: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=1200'
-      },
-    ],
+    projects,
   };
 }

@@ -1,7 +1,6 @@
 ---
 import ProjectCard from './ProjectCard.astro';
 import type { Project } from '../utils/sanity';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ProjectModal from './ProjectModal.astro';
 
 interface Props {
@@ -9,169 +8,80 @@ interface Props {
 }
 
 const { projects } = Astro.props;
-const totalPages = Math.ceil(projects.length / 3);
 ---
 
-<div class="w-full bg-wave-bg pt-12 pb-16 min-h-[400px]">
+<div class="w-full bg-wave-bg pt-12 pb-20 min-h-[400px]">
   <section id="projects" class="max-w-5xl mx-auto px-6 scroll-mt-[22vh] relative z-10">
-    <h2 class="sr-only">Mis Proyectos Destacados</h2>
-    
-    <div class="relative group/nav">
-        {projects.length > 3 && (
-            <!-- Flechas absolutas a los costados de las cards -->
-            <div class="absolute top-[45%] -translate-y-1/2 -left-4 md:-left-16 -right-4 md:-right-16 flex justify-between items-center pointer-events-none z-20">
-                <button
-                    id="prev-page"
-                    class="hidden md:flex p-2 md:p-3 text-accent-brown/30 hover:text-accent-brown hover:bg-black/5 rounded-full transition-all duration-300 cursor-pointer invisible opacity-0 active:scale-90 animate-pointing-left pointer-events-auto"
-                    aria-label="Página anterior"
-                >
-                    <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" />
-                </button>
+    <h2 class="text-3xl md:text-4xl font-medium tracking-wider text-accent-brown mb-10 text-center md:text-left">Proyectos</h2>
 
-                <button
-                    id="next-page"
-                    class="hidden md:flex p-2 md:p-3 text-accent-brown/30 hover:text-accent-brown hover:bg-black/5 rounded-full transition-all duration-300 cursor-pointer opacity-100 active:scale-90 animate-pointing-right pointer-events-auto"
-                    aria-label="Página siguiente"
-                >
-                    <ChevronRight className="w-8 h-8 md:w-10 md:h-10" />
-                </button>
-            </div>
-        )}
-
-        <div id="projects-container" class="relative overflow-hidden p-6 -m-6 z-10">
-            {Array.from({ length: totalPages }).map((_, pageIndex) => (
-                <div 
-                    class={`project-page grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 stagger-group ${pageIndex === 0 ? 'flex' : 'hidden'}`}
-                    data-page={pageIndex}
-                >
-                    {projects.slice(pageIndex * 3, (pageIndex * 3) + 3).map((project) => (
-                        <ProjectCard 
-                            id={project._id}
-                            title={project.title} 
-                            description={project.description}
-                            content={project.content}
-                            tags={project.tags ?? []}
-                            link={project.link}
-                            mainImage={project.mainImage}
-                            gallery={project.gallery}
-                        />
-                    ))}
-                </div>
-            ))}
-        </div>
+    <div id="projects-container" class="flex flex-wrap justify-center gap-8 stagger-group">
+      {projects.map((project) => (
+        <ProjectCard
+          id={project._id}
+          title={project.title}
+          description={project.description}
+          content={project.content}
+          tags={project.tags ?? []}
+          icon={project.icon}
+          link={project.link}
+          mainImage={project.mainImage}
+          gallery={project.gallery}
+        />
+      ))}
     </div>
 
-    {projects.length > 3 && (
-      <div class="mt-8 flex justify-center items-center">
-        <!-- Puntos centrados -->
-        <div class="flex items-center gap-4">
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <button
-              class={`project-dot w-2.5 h-2.5 rounded-full border-2 border-accent-brown transition-all duration-300 cursor-pointer ${i === 0 ? 'bg-accent-brown scale-125' : 'bg-transparent opacity-40 hover:opacity-100'}`}
-              data-target={i}
-              aria-label={`Ir a página ${i + 1}`}
-            />
-          ))}
-        </div>
-      </div>
-    )}
+    <div id="projects-more-wrap" class="mt-12 hidden justify-center">
+      <button
+        type="button"
+        id="projects-more"
+        aria-expanded="false"
+        aria-controls="projects-container"
+        class="inline-flex items-center gap-3 bg-glass-card border border-stroke px-8 py-3.5 rounded-full text-base font-medium text-accent-brown hover:shadow-lg active:scale-95 transition-all duration-300 cursor-pointer"
+      >
+        <span id="projects-more-label">Ver más proyectos</span>
+        <svg id="projects-more-arrow" class="w-4 h-4 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+      </button>
+    </div>
   </section>
 </div>
 
 <ProjectModal />
 
-<style>
-  @keyframes pointing-right {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(4px); }
-  }
-  @keyframes pointing-left {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(-4px); }
-  }
-  .animate-pointing-right {
-    animation: pointing-right 1.5s ease-in-out infinite;
-  }
-  .animate-pointing-left {
-    animation: pointing-left 1.5s ease-in-out infinite;
-  }
-  .animate-pointing-right:hover, .animate-pointing-left:hover {
-    animation-play-state: paused;
-  }
-</style>
-
 <script>
   function setupProjects() {
-    // Lógica de Paginación
-    const dots = document.querySelectorAll('.project-dot');
-    const pages = document.querySelectorAll('.project-page');
-    const prevBtn = document.getElementById('prev-page');
-    const nextBtn = document.getElementById('next-page');
-
-    if (!pages.length) return;
-
-    let currentPage = 0;
-    const totalPages = pages.length;
-
-    function updatePage(index: number) {
-      currentPage = index;
-
-      dots.forEach((dot, i) => {
-        if (i === index) {
-          dot.classList.add('bg-accent-brown', 'scale-125');
-          dot.classList.remove('bg-transparent', 'opacity-40');
-        } else {
-          dot.classList.remove('bg-accent-brown', 'scale-125');
-          dot.classList.add('bg-transparent', 'opacity-40');
-        }
+    // "Ver más": first batch depends on columns (1 col: 3, 2 cols: 4, 3 cols: 6).
+    const grid = document.getElementById('projects-container');
+    const moreWrap = document.getElementById('projects-more-wrap');
+    const moreBtn = document.getElementById('projects-more');
+    if (grid && moreWrap && moreBtn) {
+      const cards = [...grid.querySelectorAll<HTMLElement>('.project-card')];
+      let expanded = false;
+      const limit = () => (matchMedia('(min-width: 1024px)').matches ? 6 : matchMedia('(min-width: 768px)').matches ? 4 : 3);
+      const label = document.getElementById('projects-more-label')!;
+      const arrow = document.getElementById('projects-more-arrow')!;
+      const apply = () => {
+        const n = limit();
+        cards.forEach((c, i) => {
+          const show = expanded || i < n;
+          c.classList.toggle('hidden', !show);
+          if (show) c.classList.add('is-visible');
+        });
+        const extra = cards.length - n;
+        moreWrap.classList.toggle('hidden', extra <= 0);
+        moreWrap.classList.toggle('flex', extra > 0);
+        label.textContent = expanded ? 'Ver menos' : `Ver más proyectos (${Math.max(extra, 0)})`;
+        arrow.style.transform = expanded ? 'rotate(180deg)' : '';
+        moreBtn.setAttribute('aria-expanded', String(expanded));
+      };
+      moreBtn.addEventListener('click', () => {
+        expanded = !expanded;
+        apply();
+        if (!expanded) document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
       });
-
-      pages.forEach((page, i) => {
-        if (i === index) {
-          page.classList.remove('hidden');
-          page.classList.add('grid');
-        } else {
-          page.classList.remove('grid');
-          page.classList.add('hidden');
-        }
-      });
-
-      if (prevBtn) {
-        if (index > 0) {
-          prevBtn.classList.remove('invisible');
-          prevBtn.classList.add('opacity-100');
-          prevBtn.classList.remove('pointer-events-none');
-        } else {
-          prevBtn.classList.add('invisible');
-          prevBtn.classList.remove('opacity-100');
-          prevBtn.classList.add('pointer-events-none');
-        }
-      }
-
-      if (nextBtn) {
-        if (index < totalPages - 1) {
-          nextBtn.classList.remove('invisible');
-          nextBtn.classList.add('opacity-100');
-          nextBtn.classList.remove('pointer-events-none');
-        } else {
-          nextBtn.classList.add('invisible');
-          nextBtn.classList.remove('opacity-100');
-          nextBtn.classList.add('pointer-events-none');
-        }
-      }
+      matchMedia('(min-width: 768px)').addEventListener('change', apply);
+      matchMedia('(min-width: 1024px)').addEventListener('change', apply);
+      apply();
     }
-
-    dots.forEach((dot, i) => {
-      dot.addEventListener('click', () => updatePage(i));
-    });
-
-    prevBtn?.addEventListener('click', () => {
-      if (currentPage > 0) updatePage(currentPage - 1);
-    });
-
-    nextBtn?.addEventListener('click', () => {
-      if (currentPage < totalPages - 1) updatePage(currentPage + 1);
-    });
 
     // Lógica de Swipe para Mobile
     function addSwipeSupport(el: HTMLElement, onLeft: () => void, onRight: () => void) {
@@ -193,15 +103,6 @@ const totalPages = Math.ceil(projects.length / 3);
       }, { passive: true });
     }
 
-    const projectsContainer = document.getElementById('projects-container');
-    if (projectsContainer) {
-      addSwipeSupport(
-        projectsContainer, 
-        () => { if (currentPage < totalPages - 1) updatePage(currentPage + 1) }, 
-        () => { if (currentPage > 0) updatePage(currentPage - 1) }
-      );
-    }
-
     // Lógica del Modal Rediseñado (Vertical + Carrusel)
     const modal = document.getElementById('project-modal') as HTMLDialogElement;
     const closeBtn = document.getElementById('close-modal');
@@ -221,7 +122,7 @@ const totalPages = Math.ceil(projects.length / 3);
 
     function startAutoplay() {
         stopAutoplay();
-        if (modalImages.length <= 1) return;
+        if (modalImages.length <= 1 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         autoplayTimer = setInterval(() => {
             let next = (currentImgIndex + 1) % modalImages.length;
             updateModalImage(next);
@@ -345,7 +246,7 @@ const totalPages = Math.ceil(projects.length / 3);
             // Inyectar Puntos
             if (dotsContainer) {
                 dotsContainer.innerHTML = modalImages.map((_, i) => `
-                    <button class="modal-dot h-2 rounded-full transition-all duration-300 ${i === 0 ? 'bg-white w-6' : 'bg-white/40 w-2'}" data-index="${i}"></button>
+                    <button class="modal-dot h-2 rounded-full transition-all duration-300 ${i === 0 ? 'bg-white w-6' : 'bg-white/40 w-2'}" data-index="${i}" aria-label="Ver imagen ${i + 1} de ${modalImages.length}"></button>
                 `).join('');
                 
                 dotsContainer.querySelectorAll('.modal-dot').forEach(dot => {
@@ -368,6 +269,11 @@ const totalPages = Math.ceil(projects.length / 3);
             document.body.style.overflow = 'hidden';
             startAutoplay();
         });
+    });
+
+    modal.addEventListener('close', () => {
+        document.body.style.overflow = '';
+        stopAutoplay();
     });
 
     closeBtn.addEventListener('click', () => {

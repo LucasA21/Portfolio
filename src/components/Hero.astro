@@ -6,9 +6,11 @@ interface Props {
   title: string;
   subtitle: string;
   ctaLabel: string;
+  cvUrl?: string;
+  cvLabel?: string;
 }
 
-const { title, subtitle, ctaLabel } = Astro.props;
+const { title, subtitle, ctaLabel, cvUrl, cvLabel } = Astro.props;
 
 // Cargar SVGs para inlinear (Mejora LCP)
 const heroSvg = fs.readFileSync(path.resolve('./public/hero-illustration.svg'), 'utf-8')
@@ -17,7 +19,7 @@ const heroSvg = fs.readFileSync(path.resolve('./public/hero-illustration.svg'), 
   .replace(/^[\s\S]*?(?=<svg)/i, ""); 
 ---
 
-<section id="about" class="flex flex-col md:flex-row items-center md:items-center justify-between gap-8 lg:gap-16 mt-6 md:mt-12 pb-12 md:pb-0 scroll-mt-[22vh]">
+<section class="flex flex-col md:flex-row items-center md:items-center justify-between gap-8 lg:gap-16 mt-6 md:mt-12 pb-12 md:pb-0 scroll-mt-[22vh]">
   
   <div class="flex-1 w-full text-center md:text-left px-2 sm:px-6 md:pl-0 lg:pl-8 hero-animate-2 flex flex-col items-center md:items-start justify-center">
     
@@ -32,30 +34,42 @@ const heroSvg = fs.readFileSync(path.resolve('./public/hero-illustration.svg'), 
     </h1>
 
     <!-- Botón Desktop: se mantiene con el texto -->
-    <div class="hidden md:flex mt-10 md:mt-14 relative z-10 w-full justify-start">
+    <div class="hidden md:flex flex-wrap gap-4 mt-10 md:mt-14 relative z-10 w-full justify-start">
       <a href="#projects" class="btn-projects inline-flex bg-glass-card border border-stroke px-10 py-4 rounded-full text-base font-medium hover:shadow-lg transition-all items-center gap-3 cursor-pointer group active:scale-95">
         {ctaLabel}
         <svg class="btn-projects-arrow w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 5v14M19 12l-7 7-7-7"/>
         </svg>
       </a>
+      {cvUrl && (
+        <a href={cvUrl} download class="group/cv inline-flex bg-accent-brown text-main-bg px-10 py-4 rounded-full text-base font-medium items-center gap-3 hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95">
+          <svg class="w-5 h-5 transition-transform duration-300 group-hover/cv:translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
+          {cvLabel}
+        </a>
+      )}
     </div>
   </div>
 
   <!-- Imagen: En mobile queda entre el texto y el botón móvil -->
-  <div class="shrink-0 flex justify-center md:justify-end hero-animate-3 w-full md:w-auto -mt-2 md:mt-0">
+  <div class="shrink-0 flex justify-center md:justify-end hero-animate-3 draw-in w-full md:w-auto -mt-2 md:mt-0">
     <div class="w-64 md:w-80 lg:w-[420px] svg-container" set:html={heroSvg} />
   </div>
 
   <!-- Botón Mobile: aparece debajo de la imagen -->
   <div class="md:hidden w-full flex justify-center mt-2 hero-animate-2">
-    <div class="relative z-10">
+    <div class="relative z-10 flex flex-wrap justify-center gap-3">
        <a href="#projects" class="btn-projects inline-flex bg-glass-card border border-stroke px-8 py-3.5 rounded-full text-sm font-medium hover:shadow-lg transition-all items-center gap-3 cursor-pointer group active:scale-95">
         {ctaLabel}
         <svg class="btn-projects-arrow w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 5v14M19 12l-7 7-7-7"/>
         </svg>
       </a>
+      {cvUrl && (
+        <a href={cvUrl} download class="group/cv inline-flex bg-accent-brown text-main-bg px-8 py-3.5 rounded-full text-sm font-medium items-center gap-3 hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95">
+          <svg class="w-4 h-4 transition-transform duration-300 group-hover/cv:translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
+          {cvLabel}
+        </a>
+      )}
     </div>
   </div>
 

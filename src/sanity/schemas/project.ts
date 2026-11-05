@@ -1,5 +1,6 @@
 import { defineType, defineField, defineArrayMember } from 'sanity';
 import { ProjectsIcon } from '@sanity/icons';
+import { ICON_OPTIONS } from '../../utils/icons';
 
 export const project = defineType({
   name: 'project',

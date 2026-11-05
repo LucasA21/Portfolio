@@ -1,0 +1,16 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Doodle from '../components/Doodle.astro';
+Astro.response.status = 404;
+---
+
+<Layout title="Página no encontrada" description="La página que buscas no existe.">
+  <div class="max-w-3xl mx-auto px-6 min-h-svh flex flex-col items-center justify-center text-center gap-6 py-16">
+    <div class="fade-up w-full max-w-[460px]">
+      <Doodle name="notfound" class="w-full h-auto" />
+    </div>
+    <h1 class="text-3xl md:text-4xl font-medium tracking-wider text-accent-brown">Esta página no existe</h1>
+    <p class="text-lg text-text-dark/90 max-w-[45ch] text-pretty">Puede que el link esté mal escrito o que la página se haya movido.</p>
+    <a href="/" class="mt-2 inline-flex bg-accent-brown text-main-bg px-10 py-3.5 rounded-full text-sm font-medium tracking-widest hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-300">VOLVER AL INICIO</a>
+  </div>
+</Layout>

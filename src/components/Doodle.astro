@@ -1,0 +1,193 @@
+---
+// Line-icon battery in the portfolio's hand-drawn language: thin even strokes, rounded
+// corners, an inset highlight line and a solid side shadow (like the mailbox drawing).
+// Every stroke has pathLength="1" so `.line-draw` (global.css) draws it in on scroll.
+import type { IconName } from '../utils/icons';
+
+interface Props {
+  name: IconName;
+  class?: string;
+}
+const { name, class: className = '' } = Astro.props;
+
+const INK = '#531F1F';
+const BG = '#F6F5F1';
+
+const rr = (x: number, y: number, w: number, h: number, r = 6) =>
+  `M${x + r} ${y}H${x + w - r}A${r} ${r} 0 0 1 ${x + w} ${y + r}V${y + h - r}A${r} ${r} 0 0 1 ${x + w - r} ${y + h}H${x + r}A${r} ${r} 0 0 1 ${x} ${y + h - r}V${y + r}A${r} ${r} 0 0 1 ${x + r} ${y}Z`;
+const circ = (cx: number, cy: number, r: number) =>
+  `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+const dot = (x: number, y: number) => `M${x} ${y}h0.01`;
+const spark = (x: number, y: number, s: number) =>
+  `M${x} ${y - s}C${x + s * 0.12} ${y - s * 0.3} ${x + s * 0.3} ${y - s * 0.12} ${x + s} ${y}C${x + s * 0.3} ${y + s * 0.12} ${x + s * 0.12} ${y + s * 0.3} ${x} ${y + s}C${x - s * 0.12} ${y + s * 0.3} ${x - s * 0.3} ${y + s * 0.12} ${x - s} ${y}C${x - s * 0.3} ${y - s * 0.12} ${x - s * 0.12} ${y - s * 0.3} ${x} ${y - s}Z`;
+
+// body: filled with bg (hides its shadow). shadow: also drawn as a solid ink copy shifted right.
+// ink: solid accent. w: stroke width override. a: animation class.
+type Item = { d: string; body?: boolean; shadow?: boolean; ink?: boolean; w?: number; a?: string };
+
+const SH = 6; // side shadow offset
+
+const icons: Record<IconName, { vb: string; items: Item[] }> = {
+  web: {
+    vb: '0 0 160 120',
+    items: [
+      { d: rr(22, 16, 100, 82, 9), body: true, shadow: true },
+      { d: 'M22 38H122' },
+      { d: dot(34, 27) }, { d: dot(44, 27) }, { d: dot(54, 27) },
+      { d: 'M30 46V90' },
+      { d: rr(40, 48, 52, 26, 4) },
+      { d: 'M40 84H78M40 92H62' },
+      { d: 'M102 52H114M102 62H110' },
+      { d: 'M98 70V96L105 89L110 101L116 98L111 86L120 86Z', body: true, a: 'nudge' },
+    ],
+  },
+  search: {
+    vb: '0 0 160 120',
+    items: [
+      { d: rr(20, 14, 92, 84, 9), body: true, shadow: true },
+      { d: 'M20 34H112' },
+      { d: dot(31, 24) }, { d: dot(40, 24) }, { d: dot(49, 24) },
+      { d: 'M30 48H60M30 62H52M30 76H58M30 90H48' },
+      { d: circ(98, 70, 24), body: true, a: 'nudge' },
+      { d: 'M84 62A15 15 0 0 1 96 55' },
+      { d: 'M92 68H104M98 62V74' },
+      { d: 'M116 88L134 106', w: 7, ink: true },
+    ],
+  },
+  presentation: {
+    vb: '0 0 160 120',
+    items: [
+      { d: rr(18, 12, 118, 74, 7), body: true, shadow: true },
+      { d: 'M26 20V78' },
+      { d: 'M38 26H84' },
+      { d: rr(40, 52, 14, 24, 2) }, { d: rr(62, 42, 14, 34, 2) }, { d: rr(84, 32, 14, 44, 2) },
+      { d: 'M108 40H124M108 50H120' },
+      { d: 'M77 86V100M77 96L56 112M77 96L98 112' },
+    ],
+  },
+  shop: {
+    vb: '0 0 160 120',
+    items: [
+      { d: 'M36 40H116L122 104H30Z', body: true, shadow: true },
+      { d: 'M36 40H116' },
+      { d: 'M58 40V30A18 18 0 0 1 94 30V40' },
+      { d: 'M42 50V96' },
+      { d: rr(58, 60, 36, 28, 4) },
+      { d: 'M66 74L73 81L87 66', a: 'nudge' },
+      { d: 'M128 18L130 24L136 26L130 28L128 34L126 28L120 26L126 24Z', ink: true, a: 'twinkle' },
+    ],
+  },
+  blocks: {
+    vb: '0 0 160 120',
+    items: [
+      { d: rr(18, 16, 56, 42, 7), body: true, shadow: true },
+      { d: 'M28 28H44M28 38H54M28 48H40' },
+      { d: rr(86, 16, 48, 42, 7), body: true, shadow: true },
+      { d: rr(96, 40, 8, 10, 1.5) }, { d: rr(110, 32, 8, 18, 1.5) },
+      { d: rr(18, 68, 50, 40, 7), body: true, shadow: true },
+      { d: circ(43, 88, 11) }, { d: 'M43 82V88L48 91' },
+      { d: rr(84, 74, 50, 36, 7), body: true, a: 'nudge' },
+      { d: 'M109 85V99M102 92H116' },
+    ],
+  },
+  mobile: {
+    vb: '0 0 160 120',
+    items: [
+      { d: rr(52, 8, 54, 104, 11), body: true, shadow: true },
+      { d: 'M72 17H86' },
+      { d: rr(59, 26, 40, 76, 4) },
+      { d: circ(79, 44, 8) },
+      { d: 'M67 62H91M67 71H85' },
+      { d: rr(67, 82, 24, 9, 4.5), a: 'nudge' },
+      { d: 'M72 106H86' },
+      { d: spark(130, 30, 9), ink: true, a: 'twinkle' },
+      { d: spark(28, 84, 6), ink: true, a: 'twinkle' },
+    ],
+  },
+  game: {
+    vb: '0 0 160 120',
+    items: [
+      { d: 'M36 46C36 34 46 30 58 30H100C112 30 122 34 122 46L130 86C132 98 120 104 110 96L98 82H62L50 96C40 104 28 98 30 86Z', body: true, shadow: true },
+      { d: 'M46 38H112' },
+      { d: 'M54 48V68M44 58H64', w: 5.5 },
+      { d: circ(100, 52, 4.5) }, { d: circ(111, 62, 4.5) },
+      { d: circ(72, 72, 5) }, { d: circ(88, 72, 5) },
+    ],
+  },
+  dashboard: {
+    vb: '0 0 160 120',
+    items: [
+      { d: rr(18, 14, 118, 90, 9), body: true, shadow: true },
+      { d: 'M18 34H136' },
+      { d: dot(29, 24) }, { d: dot(38, 24) }, { d: dot(47, 24) },
+      { d: 'M46 44V96' },
+      { d: 'M56 46H86' },
+      { d: rr(56, 72, 10, 24, 2) }, { d: rr(72, 62, 10, 34, 2) }, { d: rr(88, 52, 10, 44, 2) },
+      { d: circ(118, 72, 13) },
+      { d: 'M118 72V59A13 13 0 0 1 131 72Z', ink: true },
+    ],
+  },
+  ai: {
+    vb: '0 0 160 120',
+    items: [
+      { d: 'M60 28V16M80 28V16M100 28V16M60 92V104M80 92V104M100 92V104M44 44H32M44 60H32M44 76H32M116 44H128M116 60H128M116 76H128' },
+      { d: rr(44, 28, 72, 64, 11), body: true, shadow: true },
+      { d: rr(58, 42, 44, 36, 6) },
+      { d: spark(80, 60, 12), ink: true, a: 'twinkle' },
+      { d: spark(130, 22, 7), ink: true, a: 'twinkle' },
+      { d: spark(24, 98, 5), ink: true, a: 'twinkle' },
+    ],
+  },
+  database: {
+    vb: '0 0 160 120',
+    items: [
+      { d: 'M38 30V90C38 98 56 104 80 104C104 104 122 98 122 90V30', body: true, shadow: true },
+      { d: circ(80, 30, 42).replace(/a42 42/g, 'a42 11') , body: true },
+      { d: 'M38 50C38 56 56 61 80 61C104 61 122 56 122 50' },
+      { d: 'M38 70C38 76 56 81 80 81C104 81 122 76 122 70' },
+      { d: 'M48 30C48 33 62 36 80 36', a: 'nudge' },
+    ],
+  },
+  notfound: {
+    vb: '0 0 400 300',
+    items: [
+      { d: rr(70, 24, 270, 164, 16), body: true, shadow: true },
+      { d: 'M82 38V172' },
+      { d: 'M143 86L109 140H161M143 86V166', w: 6 },
+      { d: 'M180 126a25 40 0 1 0 50 0a25 40 0 1 0 -50 0Z', w: 6 },
+      { d: 'M283 86L249 140H301M283 86V166', w: 6 },
+      { d: 'M206 188V238' },
+      { d: rr(160, 238, 92, 14, 5), body: true },
+      { d: rr(24, 252, 352, 14, 6), body: true },
+      { d: 'M44 266V294M356 266V294' },
+      { d: rr(34, 232, 52, 20, 5), body: true },
+      { d: 'M48 242h0.01M72 242h0.01' },
+      { d: rr(112, 234, 26, 18, 3), body: true, a: 'sway' },
+      { d: 'M112 239H103M112 247H103', a: 'sway' },
+      { d: 'M138 243C148 243 152 247 160 246', a: 'sway' },
+      { d: 'M290 214H326V238Q326 252 312 252H304Q290 252 290 238Z', body: true },
+      { d: 'M326 222C342 222 342 244 326 244' },
+      { d: 'M300 202C294 194 306 190 300 180', a: 'steam' },
+      { d: 'M314 202C308 194 320 190 314 180', a: 'steam' },
+    ],
+  },
+};
+
+const icon = icons[name];
+const sw = name === 'notfound' ? 3 : 2.2;
+---
+
+<svg viewBox={icon.vb} class={`${className}`} fill="none" stroke={INK} stroke-width={sw} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <g class="icon-ink">
+    {icon.items.filter((i) => i.shadow).map((i) => <path d={i.d} fill={INK} stroke="none" transform={`translate(${name === 'notfound' ? 10 : SH} 0)`} />)}
+  </g>
+  <g class="line-draw">
+    {icon.items.map((i) =>
+      i.ink && !i.w ? (
+        <path d={i.d} fill={INK} stroke="none" class={i.a} />
+      ) : (
+        <path pathLength="1" d={i.d} fill={i.body ? BG : 'none'} stroke={INK} stroke-width={i.w} class={i.a} />
+      )
+    )}
+  </g>
+</svg>

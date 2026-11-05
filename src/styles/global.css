@@ -53,22 +53,19 @@ html, body {
     outline-offset: 4px;
 }
 
-@keyframes bounce-down {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(4px);
-    }
+@keyframes nudge-down {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
 }
 
+/* Arrow nudges 3 times after load, then rests. Hover replays it. */
 .btn-projects-arrow {
     display: inline-block;
-    animation: bounce-down 1.5s ease-in-out infinite;
+    animation: nudge-down 1.4s cubic-bezier(0.22, 1, 0.36, 1) 1.2s 3;
 }
 
 .btn-projects:hover .btn-projects-arrow {
-    animation-duration: 0.8s;
+    animation: nudge-down 0.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
 .fade-up, .fade-up-bottom {
@@ -89,6 +86,102 @@ html, body {
 .stagger-group > *:nth-child(1) { transition-delay: 0ms; }
 .stagger-group > *:nth-child(2) { transition-delay: 150ms; }
 .stagger-group > *:nth-child(3) { transition-delay: 300ms; }
+.stagger-group > *:nth-child(4) { transition-delay: 150ms; }
+.stagger-group > *:nth-child(5) { transition-delay: 300ms; }
+.stagger-group > *:nth-child(6) { transition-delay: 450ms; }
+
+/* Browser surfaces themed from the palette */
+::selection {
+    background: color-mix(in srgb, var(--color-accent-brown) 85%, transparent);
+    color: var(--color-main-bg);
+}
+a:not([class]) {
+    text-underline-offset: 0.2em;
+}
+.skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 100;
+    background: var(--color-accent-brown);
+    color: var(--color-main-bg);
+    padding: 0.6rem 1.2rem;
+    border-radius: 999px;
+    transition: top 0.2s;
+}
+.skip-link:focus { top: 1rem; }
+
+/* Authored moment: line illustrations get drawn in once, then idle. */
+@keyframes draw-in {
+    from { clip-path: inset(0 100% 0 0); }
+    to { clip-path: inset(0 0 0 0); }
+}
+@keyframes idle-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+.draw-in svg {
+    animation: draw-in 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both,
+               idle-float 7s ease-in-out 2s infinite;
+}
+
+/* Waves drift slowly with scroll where supported */
+@supports (animation-timeline: scroll()) {
+    @keyframes wave-drift {
+        from { transform: translateX(-1.5%) scaleX(1.04); }
+        to { transform: translateX(1.5%) scaleX(1.04); }
+    }
+    .wave-drift svg {
+        animation: wave-drift linear both;
+        animation-timeline: scroll(root);
+    }
+}
+
+/* Self-drawing linework (about scene) */
+.line-draw path, .line-draw circle, .line-draw rect {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.is-visible .line-draw path, .is-visible .line-draw circle, .is-visible .line-draw rect,
+.line-draw.is-visible path, .line-draw.is-visible circle, .line-draw.is-visible rect {
+    stroke-dashoffset: 0;
+}
+@keyframes twinkle {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.55); opacity: 0.6; }
+}
+@keyframes sway {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(-5px); }
+}
+@keyframes nudge {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(2px, -2px); }
+}
+.twinkle { transform-box: fill-box; transform-origin: center; animation: twinkle 2.8s ease-in-out infinite; }
+.sway { animation: sway 3.2s ease-in-out infinite; }
+.nudge { animation: nudge 3.6s ease-in-out infinite; }
+.icon-ink { opacity: 0; transition: opacity 0.8s ease-out 0.9s; }
+.is-visible .icon-ink { opacity: 1; }
+@keyframes steam {
+    0% { opacity: 0; transform: translateY(6px); }
+    40% { opacity: 0.9; }
+    100% { opacity: 0; transform: translateY(-10px); }
+}
+.steam { animation: steam 3.2s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+    .icon-ink { opacity: 1; }
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+        animation: none !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0ms !important;
+    }
+    .fade-up, .fade-up-bottom { opacity: 1; transform: none; }
+    .line-draw path, .line-draw circle, .line-draw rect { stroke-dashoffset: 0; }
+}
 
 /* Scrollbar styles remain in global.css */
 ::-webkit-scrollbar {

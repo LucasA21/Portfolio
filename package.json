@@ -24,7 +24,7 @@
     "@sanity/client": "^7.21.0",
     "@sanity/icons": "^3.7.4",
     "@sanity/ui": "^3.1.14",
-    "@tailwindcss/vite": "^4.2.4",
+    "@tailwindcss/vite": "^4.3.4",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "astro": "^6.1.9",
@@ -37,7 +37,7 @@
     "react-is": "^19.2.5",
     "sanity": "^5.22.0",
     "styled-components": "^6.4.1",
-    "tailwindcss": "^4.2.4"
+    "tailwindcss": "^4.3.4"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",

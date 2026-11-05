@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
+import About from '../components/About.astro';
 import Hero from '../components/Hero.astro';
 import ProjectsSection from '../components/ProjectsSection.astro';
 import WaveSeparator from '../components/WaveSeparator.astro';
@@ -9,7 +10,7 @@ import Footer from '../components/Footer.astro';
 import { getSiteData } from '../utils/sanity';
 
 const { settings, projects } = await getSiteData();
-const { hero, seo, contact, footer, socialLinks } = settings;
+const { hero, seo, about, contact, footer, socialLinks } = settings;
 ---
 
 <Layout title={seo?.title} description={seo?.description}>
@@ -23,6 +24,8 @@ const { hero, seo, contact, footer, socialLinks } = settings;
       title={hero?.title!}
       subtitle={hero?.subtitle!}
       ctaLabel={hero?.ctaLabel!}
+      cvUrl={about?.cvUrl}
+      cvLabel={about?.cvLabel}
     />
   </div> 
 
@@ -32,9 +35,15 @@ const { hero, seo, contact, footer, socialLinks } = settings;
 
   <WaveSeparator position="bottom" />
 
-  <div class="max-w-5xl mx-auto px-6 pt-4 pb-10">
-    <ContactSection contact={contact as any} />
-    <Footer footer={footer as any} />
+  <About title={about?.title!} text={about?.text!} cvUrl={about?.cvUrl} cvLabel={about?.cvLabel} />
+
+  <WaveSeparator position="top" />
+
+  <div class="w-full bg-wave-bg pb-10">
+    <div class="max-w-5xl mx-auto px-6 pt-4">
+      <ContactSection contact={contact as any} />
+      <Footer footer={footer as any} />
+    </div>
   </div>
 
 </Layout>
