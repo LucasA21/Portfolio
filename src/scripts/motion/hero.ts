@@ -1,7 +1,7 @@
 import { gsap } from 'gsap';
 import type { MotionContext } from './index';
 import { $, blink, drawIn, pivot, visibleScene, whileVisible } from './util';
-import { playCable } from './thread';
+import { launch } from './flight';
 
 export function initHero({ reduce }: MotionContext) {
   const scene = visibleScene('hero');
@@ -33,7 +33,7 @@ export function initHero({ reduce }: MotionContext) {
   const loops = [typing, blink(scene)];
   intro.eventCallback('onComplete', () => {
     scene.setAttribute('data-intro', 'done');
-    playCable();
+    launch();
     whileVisible(scene, loops);
   });
   intro.play();

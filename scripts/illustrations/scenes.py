@@ -108,7 +108,7 @@ open(OUT + 'HeroScene.astro', 'w').write(HEADER.format(extra='', extra2='') + he
 
 # ---------- CONTACT ----------
 BG = '#F6F5F1'
-def envelope(cx, top, slot_y, w=140, h=88):
+def envelope(cx, top, slot_y, flag, w=140, h=88):
     # Drawn by the thread (desktop) or on its own (small screens), then it slides into the slot.
     x0, x1, y1 = cx - w / 2, cx + w / 2, top + h
     body = f'M{x0} {top}H{x1}V{y1}H{x0}Z'
@@ -118,7 +118,10 @@ def envelope(cx, top, slot_y, w=140, h=88):
             f'<path data-envelope-body="" d="{body}" fill="{BG}" stroke="none"/>'
             f'<path data-envelope-outline="" d="{outline}" stroke-width="5"/>'
             f'<path data-envelope-flap="" d="{flap}" stroke-width="5"/></g>'
-            f'<path data-thread-path="contact" d="M{cx} 0V{top}" stroke="none"/>')
+            f'<path data-thread-path="contact" d="M{cx} 0V{top}" stroke="none"/>'
+            # Mailbox flag: pole and pennant, up by default (rotated down by the motion script until the delivery).
+            f'<g data-flag="" data-origin="{flag[0]} {flag[1]}"><path d="M{flag[0]} {flag[1]}V{flag[1] - 84}" stroke-width="5"/>'
+            f'<path d="M{flag[0]} {flag[1] - 84}L{flag[0] + 46} {flag[1] - 68}L{flag[0]} {flag[1] - 50}Z" fill="#a8433a" stroke="#531F1F" stroke-width="3"/></g>')
 
 sen_shadow = [(598, 430), (700, 430), (800, 470), (848, 600), (848, 998), (768, 998), (768, 910), (760, 600), (733, 500), (660, 454), (598, 454)]
 apo_shadow = [(740, 455), (830, 455), (920, 500), (966, 620), (966, 1000), (888, 1000), (886, 940), (878, 640), (848, 540), (790, 480), (740, 478)]
@@ -128,14 +131,14 @@ desk = scene('contact', 'contact-señalar.svg', (967, 1135), 'Lucas apoyado en u
     ('eyeR', box(432.8, 244.7, 5, 7), '432.8 244.7', 'head'),
     ('forearm', [(150, 318), (252, 330), (306, 428), (316, 508), (248, 474), (196, 432), (150, 424)], '306 466', None),
     ('slotLid', [(532, 552), (722, 552), (722, 612), (532, 612)], '541 588', None),
-], 'contact-señalar.json', extra_fill=[sen_shadow, [(532, 552), (722, 552), (722, 612), (532, 612)]], additions=envelope(627, 290, 552))
+], 'contact-señalar.json', extra_fill=[sen_shadow, [(532, 552), (722, 552), (722, 612), (532, 612)]], additions=envelope(627, 290, 552, (864, 600)))
 mob = scene('contactm', 'contact-apoyado.svg', (1073, 1162), 'Lucas apoyado en un buzón junto a su escritorio', [
     ('head', [(488, 150), (672, 150), (672, 340), (488, 340)], '590 345', None),
     ('eyeL', box(539.9, 271.9, 5, 7), '539.9 271.9', 'head'),
     ('eyeR', box(580.1, 270.8, 5, 7), '580.1 270.8', 'head'),
     ('hand', [(584, 492), (652, 492), (668, 520), (660, 545), (638, 552), (636, 584), (600, 584), (584, 562)], '628 500', None),
     ('slotLid', [(676, 578), (870, 578), (870, 636), (676, 636)], '690 600', None),
-], 'contact-apoyado.json', extra_fill=[apo_shadow, [(676, 578), (870, 578), (870, 636), (676, 636)]], additions=envelope(773, 450, 578)).replace('data-scene="contactm"', 'data-scene="contact"')
+], 'contact-apoyado.json', extra_fill=[apo_shadow, [(676, 578), (870, 578), (870, 636), (676, 636)]], additions=envelope(773, 450, 578, (976, 640))).replace('data-scene="contactm"', 'data-scene="contact"')
 open(OUT + 'ContactScene.astro', 'w').write(HEADER.format(extra="; variant: 'desktop' | 'mobile'", extra2=', variant')
     + "{variant === 'desktop' ? (\n" + desk + "\n) : (\n" + mob + "\n)}\n")
 if __name__ == '__main__':

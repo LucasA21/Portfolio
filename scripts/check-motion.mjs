@@ -1,4 +1,4 @@
-// Motion checks for the "hilo de tinta" animation. Starts the dev server, drives Chromium, exits 1 on failure.
+// Motion checks for the paper plane flight and the scene animations. Starts the dev server, drives Chromium, exits 1 on failure.
 // Run: pnpm check:motion  (needs Chromium at /usr/bin/chromium or CHROMIUM_PATH)
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright-core';
@@ -55,12 +55,14 @@ await test('reduced-motion', async () => {
   const p = await page({ reducedMotion: 'reduce' });
   await scrollTo(p, 'max');
   const r = await p.evaluate(() => ({
-    thread: [...document.querySelectorAll('[data-thread-seg]')].map((s) => getComputedStyle(s).strokeDasharray),
+    plane: (() => { const g = document.querySelector('[data-plane]'); const f = g.querySelector('[data-frame]:not([style*="none"])'); return { frame: f?.dataset.frame, opacity: g.style.opacity }; })(),
+    flag: document.querySelector('[data-scene="contact"] [data-flag]')?.getAttribute('transform') ?? 'none',
     delivered: document.querySelector('[data-scene="contact"]').dataset.delivered,
     running: document.querySelectorAll('[data-motion="running"]').length,
     cssLoops: document.getAnimations().filter((a) => a.effect?.getTiming().iterations === Infinity && a.playState === 'running').length,
   }));
-  assert(r.thread.every((d) => d === 'none'), `thread not complete: ${r.thread}`);
+  assert(r.plane.frame === 'pinned' && r.plane.opacity === '1', `plane not pinned to the board: ${JSON.stringify(r.plane)}`);
+  assert(!/rotate\(9|matrix\(0/.test(r.flag), `flag not up: ${r.flag}`);
   assert(r.delivered === 'true', 'envelope not delivered');
   assert(r.running === 0 && r.cssLoops === 0, `loops running: ${r.running} gsap scenes, ${r.cssLoops} css`);
   await p.close();
@@ -99,16 +101,114 @@ await test('hero-pausa', async () => {
   await p.close();
 });
 
-await test('hilo-progreso', async () => {
+const plane = (p) => p.evaluate(() => {
+  const g = document.querySelector('[data-plane]');
+  return { x: +g.dataset.x, y: +g.dataset.y, rot: +g.dataset.rot, opacity: +g.style.opacity, phase: g.dataset.phase };
+});
+const atFrac = async (p, f) => { await p.evaluate((f) => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * f), f); await sleep(1600); };
+
+await test('vuelo-progreso', async () => {
   const p = await page();
-  const values = [];
-  for (const f of [0, 0.5, 1]) {
-    await p.evaluate((f) => scrollTo(0, (document.documentElement.scrollHeight - innerHeight) * f), f); await sleep(1400);
-    values.push((await drawn(p, '[data-thread-seg="a1"]')) + (await drawn(p, '[data-thread-seg="b"]')));
+  await sleep(2500); // takeoff from the laptop
+  const ys = [];
+  for (const f of [0, 0.3, 0.6, 1]) { await atFrac(p, f); ys.push((await plane(p)).y); }
+  assert(ys.every((y, i) => i === 0 || y >= ys[i - 1] - 1), `plane does not advance with the scroll: ${ys}`);
+  const mail = await p.evaluate(() => { const b = document.querySelector('[data-scene="contact"] [data-envelope-body]').getBoundingClientRect(); return b.top + b.height / 2 + scrollY - document.querySelector('main').getBoundingClientRect().top - scrollY; });
+  assert(ys.at(-1) > 0, 'plane never took off');
+  await p.close();
+});
+
+await test('avion-orientacion', async () => {
+  const p = await page();
+  await sleep(2500);
+  for (const f of [0.15, 0.3, 0.45]) {
+    await atFrac(p, f);
+    const r = await p.evaluate(() => {
+      const g = document.querySelector('[data-plane]');
+      if (g.dataset.phase !== 'flying') return null;
+      const route = document.querySelector('[data-flight-route="a"]'); const L = route.getTotalLength();
+      const x = +g.dataset.x, y = +g.dataset.y; let best = 0, bd = 1e9;
+      for (let s = 0; s <= L; s += 2) { const q = route.getPointAtLength(s); const d = Math.hypot(q.x - x, q.y - y); if (d < bd) { bd = d; best = s; } }
+      const a = route.getPointAtLength(Math.max(0, best - 6)), b = route.getPointAtLength(Math.min(L, best + 6));
+      const tan = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+      return { off: bd, diff: Math.abs(((+g.dataset.rot - tan + 540) % 360) - 180) };
+    });
+    if (!r) continue;
+    assert(r.off < 4, `plane is ${r.off}px off the route`);
+    assert(r.diff < 25, `nose points ${r.diff} degrees away from the heading`);
+    // The drawn plane must sit on the route too, with its trail behind it (not beside it).
+    const seen = await p.evaluate(() => {
+      const g = document.querySelector('[data-plane]'); const box = g.getBoundingClientRect(); const svg = document.querySelector('[data-thread]').getBoundingClientRect();
+      return { dx: box.left + box.width / 2 - svg.left - +g.dataset.x, dy: box.top + box.height / 2 - svg.top - +g.dataset.y };
+    });
+    assert(Math.hypot(seen.dx, seen.dy) < 14, `drawn plane is ${Math.round(Math.hypot(seen.dx, seen.dy))}px away from its position on the route`);
   }
-  assert(values[0] <= values[1] && values[1] <= values[2], `not monotonic: ${values}`);
-  assert(values[2] >= 1.98, `thread not complete at the end: ${values[2]}`);
-  assert(await drawn(p, '[data-thread-seg="a0"]') > 0.99, 'laptop cable did not plug in');
+  await p.close();
+});
+
+await test('estela-acotada', async () => {
+  const p = await page();
+  await sleep(2500);
+  for (const f of [0.1, 0.35, 0.55, 0.8]) {
+    await atFrac(p, f);
+    const share = await p.evaluate(() => [...document.querySelectorAll('[data-trail]')].reduce((n, t) => {
+      const d = getComputedStyle(t).strokeDasharray; if (d === 'none') return n;
+      return n + parseFloat(d) / t.getTotalLength();
+    }, 0));
+    assert(share <= 0.125, `trail covers ${(share * 100).toFixed(1)}% of the route at ${f}`);
+  }
+  await p.close();
+});
+
+await test('estela-en-la-carga', async () => {
+  const p = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await p.goto(URL, { waitUntil: 'domcontentloaded' });
+  // Sample from the first frames until the takeoff: the trail must never show as a full line.
+  let worst = 0;
+  for (let t = 0; t < 3500; t += 100) {
+    worst = Math.max(worst, await p.evaluate(() => [...document.querySelectorAll('[data-trail]')].reduce((n, e) => {
+      if (!e.getAttribute('d')) return n;
+      const d = getComputedStyle(e).strokeDasharray;
+      return n + (d === 'none' ? 1 : parseFloat(d) / e.getTotalLength());
+    }, 0)));
+    await sleep(100);
+  }
+  assert(worst <= 0.125, `trail showed ${(worst * 100).toFixed(0)}% of the route while loading`);
+  await p.close();
+});
+
+await test('cards-elevacion', async () => {
+  const p = await page();
+  await sleep(2500);
+  const lifted = new Set(); let max = 0;
+  const total = await p.evaluate(() => document.querySelectorAll('.project-card, .project-featured').length);
+  for (let f = 0.05; f < 0.7; f += 0.025) {
+    await atFrac(p, f);
+    const n = await p.evaluate(() => [...document.querySelectorAll('.project-card, .project-featured')].map((c, i) => c.classList.contains('plane-pass') ? i : -1).filter((i) => i >= 0));
+    n.forEach((i) => lifted.add(i)); max = Math.max(max, n.length);
+  }
+  assert(lifted.size >= 1, 'no card was lifted by the plane');
+  assert(max < total, 'all cards lifted at once');
+  await atFrac(p, 1);
+  const stuck = await p.evaluate(() => document.querySelectorAll('.plane-pass').length);
+  assert(stuck === 0, `${stuck} cards stayed lifted after the plane left`);
+  const top = await p.evaluate(() => { const c = [...document.querySelectorAll('.project-card')].find((e) => e.offsetParent); return getComputedStyle(c).top; });
+  assert(top === '0px', `card did not settle: top ${top}`);
+  await p.close();
+});
+
+await test('avion-pinchado', async () => {
+  const p = await page();
+  await sleep(2500);
+  let r = null;
+  const top = await p.evaluate(() => document.getElementById('about').getBoundingClientRect().top + scrollY - 500);
+  for (let y = top; y < top + 1000 && r?.phase !== 'pinned'; y += 50) {
+    await p.evaluate((y) => scrollTo(0, y), y); await sleep(900);
+    r = await plane(p);
+  }
+  assert(r.phase === 'pinned', `plane never pinned on the board: ${JSON.stringify(r)}`);
+  await p.evaluate(() => scrollTo(0, 0)); await sleep(1800);
+  assert((await plane(p)).phase !== 'pinned', 'plane stayed pinned after scrolling back up');
   await p.close();
 });
 
@@ -121,7 +221,7 @@ for (const w of [1024, 1440, 1920]) await test(`hilo-sin-texto-${w}`, async () =
       .filter((e) => !e.closest('.project-card') && e.offsetParent)
       .flatMap((e) => { const r = document.createRange(); r.selectNodeContents(e); return [...r.getClientRects()]; });
     const out = [];
-    for (const seg of document.querySelectorAll('[data-thread-seg]')) {
+    for (const seg of document.querySelectorAll('[data-flight-route]')) {
       const L = seg.getTotalLength();
       for (let s = 0; s <= L; s += 6) {
         const pt = seg.getPointAtLength(s); const x = pt.x + main.left, y = pt.y + main.top;
@@ -142,7 +242,7 @@ for (const w of [1024, 1440, 1920]) await test(`hilo-entre-cards-${w}`, async ()
     const main = document.querySelector('main').getBoundingClientRect();
     const rects = [...document.querySelectorAll('.project-card')].filter((c) => c.offsetParent).map((c) => c.getBoundingClientRect());
     const out = [];
-    for (const seg of document.querySelectorAll('[data-thread-seg]')) {
+    for (const seg of document.querySelectorAll('[data-flight-route]')) {
       const L = seg.getTotalLength();
       for (let s = 0; s <= L; s += 4) {
         const pt = seg.getPointAtLength(s); const x = pt.x + main.left, y = pt.y + main.top;
@@ -164,19 +264,46 @@ await test('about-boceto', async () => {
   assert(await drawn(p, `${sketch}:last-of-type`) > 0.98, 'sketch not complete after Sobre mí');
   await p.close();
   const m = await page({ viewport: { width: 390, height: 844 }, isMobile: true });
-  await m.evaluate(() => document.getElementById('about').scrollIntoView()); await sleep(5000);
+  await m.evaluate(() => document.querySelector('[data-scene="about"]').scrollIntoView({ block: 'center' })); await sleep(5000);
   assert(await drawn(m, `${sketch}:last-of-type`) > 0.98, 'mobile sketch not complete');
   await m.close();
 });
 
 await test('entrega', async () => {
   const p = await page();
-  await scrollTo(p, 'max'); await sleep(800);
+  await scrollTo(p, 'max'); await sleep(3200); // landing, unfold (0.75 s) and the envelope's slide
   assert(await p.getAttribute('[data-scene="contact"]', 'data-delivered') === 'true', 'envelope not delivered');
   await test('reversa', async () => {
     await p.evaluate(() => scrollTo(0, document.getElementById('about').offsetTop)); await sleep(2200);
     assert(await p.getAttribute('[data-scene="contact"]', 'data-delivered') === 'false', 'envelope did not come back');
   });
+  await p.close();
+});
+
+await test('desdoble-una-vez', async () => {
+  const p = await page();
+  await p.evaluate(() => { window.__unfolds = 0; const g = document.querySelector('[data-plane]'); new MutationObserver((ms) => ms.forEach((m) => { if (m.target.dataset?.frame === 'sheet' && m.target.style.display !== 'none') window.__unfolds++; })).observe(g, { subtree: true, attributes: true, attributeFilter: ['style'] }); });
+  await scrollTo(p, 'max'); await sleep(2500);
+  await p.evaluate(() => scrollTo(0, document.documentElement.scrollHeight - innerHeight - 40)); await sleep(1500);
+  await p.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); await sleep(1500);
+  const n = await p.evaluate(() => window.__unfolds);
+  assert(n === 1, `unfold ran ${n} times without leaving the mailbox`);
+  assert(await p.getAttribute('[data-scene="contact"]', 'data-delivered') === 'true', 'not delivered');
+  const left = await p.evaluate(() => [...document.querySelectorAll('[data-trail]')].reduce((n, e) => {
+    const d = getComputedStyle(e).strokeDasharray;
+    return n + (d === 'none' ? (e.getAttribute('d') ? 1 : 0) : parseFloat(d) / e.getTotalLength());
+  }, 0));
+  assert(left < 0.001, `trail still visible after the delivery: ${(left * 100).toFixed(1)}%`);
+  await p.close();
+});
+
+await test('mobile-sin-estela', async () => {
+  const p = await page({ viewport: { width: 390, height: 844 }, isMobile: true });
+  await sleep(3200);
+  const r = await p.evaluate(() => ({ trail: [...document.querySelectorAll('[data-trail]')].every((t) => !t.getAttribute('d')) , y: scrollY }));
+  assert(r.trail, `long trail present below 1024px: ${JSON.stringify(r)}`);
+  await p.evaluate(() => document.getElementById('contact').scrollIntoView()); await sleep(4500);
+  assert(await p.evaluate(() => [...document.querySelectorAll('[data-scene="contact"]')].find((e) => e.getBoundingClientRect().width > 0).dataset.delivered) === 'true', 'plane did not deliver on mobile');
   await p.close();
 });
 

@@ -6,6 +6,8 @@ import HeroScene from '../components/scenes/HeroScene.astro';
 import ContactScene from '../components/scenes/ContactScene.astro';
 import AboutScene from '../components/scenes/AboutScene.astro';
 import { ICON_OPTIONS } from '../utils/icons';
+import heroRaw from '../../public/hero-illustration.svg?raw';
+import contactRaw from '../../public/contact-señalar.svg?raw';
 
 if (!import.meta.env.DEV) return new Response(null, { status: 404 });
 const scenes = [...ICON_OPTIONS.map((o) => o.value), 'notfound'] as const;
@@ -14,10 +16,70 @@ const pairs: { title: string; original: string; Comp: any; props: Record<string,
   { title: 'Contacto (escritorio)', original: '/contact-señalar.svg', Comp: ContactScene, props: { variant: 'desktop' } },
   { title: 'Contacto (celular)', original: '/contact-apoyado.svg', Comp: ContactScene, props: { variant: 'mobile' } },
 ];
+
+// Paper plane review (phase 1 of plan-avion-de-papel): raw SVGs, one per variant and piece.
+const planeRaw = import.meta.glob('../components/planes/*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const plane = (v: string, piece: string) => planeRaw[`../components/planes/${v}-${piece}.svg`];
+const PIECES = ['plane', 'plane-pinned', 'sheet'] as const;
+const FRAMES = ['plane', 'unfold-1', 'unfold-2', 'sheet', 'fold-1', 'fold-2'] as const;
+const VARIANTS = [
+  { id: 'a', name: 'A. Dardo limpio', note: 'Silueta clásica, pliegues finos, la más sobria.' },
+  { id: 'b', name: 'B. A mano suelta', note: 'Más variación de grosor y vértices movidos, la más cercana al trazo de las escenas.' },
+  { id: 'c', name: 'C. Angular y chico', note: 'Cuerpo corto con alas abiertas, lee mejor a 40 px.' },
+];
+// Crops of the real scenes through the viewBox, to compare stroke weight.
+const crop = (raw: string, vb: string) =>
+  raw.replace(/<svg([^>]*?)width="[^"]*"\s*height="[^"]*"\s*viewBox="[^"]*"/, `<svg$1 viewBox="${vb}"`);
+const heroCrop = crop(heroRaw, '330 400 320 240');
+const mailCrop = crop(contactRaw, '500 440 280 210');
+const inkD = (svg: string) => svg.match(/fill="#531F1F" d="([^"]*)"/)?.[1] ?? '';
 ---
 
 <Layout title="Dibujos">
   <div class="max-w-6xl mx-auto px-6 py-12 flex flex-col gap-16">
+    <section data-review="Avión de papel">
+      <h2 class="text-2xl text-accent-brown mb-2">Avión de papel: 3 variantes</h2>
+      <p class="mb-6 text-sm">Cada columna: tamaño real (52 px) y ampliado, el desdoble en 6 fotogramas y recortes de las escenas a escala parecida para comparar el trazo.</p>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {VARIANTS.map((v) => (
+          <article class="plane-col flex flex-col gap-5" data-variant={v.id}>
+            <header><h3 class="text-xl text-accent-brown">{v.name}</h3><p class="text-sm">{v.note}</p></header>
+            <div class="grid grid-cols-3 gap-3 items-end">
+              {PIECES.map((p) => (
+                <figure><div class="w-full" set:html={plane(v.id, p)} /><figcaption class="text-xs">{p}</figcaption></figure>
+              ))}
+            </div>
+            <div class="flex items-end gap-4">
+              {PIECES.map((p) => <div class="w-[52px]" set:html={plane(v.id, p)} />)}
+              <div class="w-[52px]" set:html={plane(v.id, 'fold-2')} />
+              <span class="text-xs">tamaño real</span>
+            </div>
+            <div class="grid grid-cols-6 gap-1">
+              {FRAMES.map((f) => <figure><div set:html={plane(v.id, f)} /><figcaption class="text-[10px]">{f}</figcaption></figure>)}
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-32 plane-stage" data-frames={JSON.stringify(FRAMES.map((f) => f))}>
+                {FRAMES.map((f, i) => <div class="plane-frame" data-i={i} style={i ? 'display:none' : ''} set:html={plane(v.id, f)} />)}
+              </div>
+              <button class="text-xs underline" data-play="stop">Stop-motion</button>
+              <svg class="w-32 morph-svg" viewBox="0 0 124 72" fill="none" data-morph={JSON.stringify([inkD(plane(v.id, 'plane')), inkD(plane(v.id, 'sheet')), inkD(plane(v.id, 'fold-2'))])}>
+                <path fill="#531F1F" d={inkD(plane(v.id, 'plane'))} />
+              </svg>
+              <button class="text-xs underline" data-play="morph">Morph</button>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8 max-w-3xl">
+        <figure><div class="w-full max-w-[420px] crop" set:html={heroCrop} /><figcaption class="text-xs">Hero (laptop), ampliado x3</figcaption></figure>
+        <figure><div class="w-full max-w-[420px] crop" set:html={mailCrop} /><figcaption class="text-xs">Buzón (ranura y sobre), ampliado x3.4</figcaption></figure>
+        <figure class="sm:col-span-2 flex items-end gap-6">
+          <div class="w-[132px] crop" set:html={heroCrop} />
+          <div class="w-[122px] crop" set:html={mailCrop} />
+          <figcaption class="text-xs">Mismos recortes a escala real del sitio (hero 420 px de ancho): compará con los aviones de "tamaño real".</figcaption>
+        </figure>
+      </div>
+    </section>
     {pairs.map(({ title, original, Comp, props }) => (
       <section data-review={title}>
         <h2 class="text-2xl text-accent-brown mb-4">{title}</h2>
@@ -56,11 +118,34 @@ const pairs: { title: string; original: string; Comp: any; props: Record<string,
 </Layout>
 
 <style is:global>
+  .plane-col div > svg:not(.morph-svg), .crop svg { width: 100%; height: auto; display: block; }
+  .plane-col .morph-svg { width: 8rem; height: auto; }
   .review-overlay [data-part] path:not([fill]), .review-overlay [data-part] ellipse { stroke: #1f6feb; }
   .review-overlay [data-part] [fill="#531F1F"] { fill: #1f6feb; }
 </style>
 
 <script>
+  import { gsap } from 'gsap';
+  import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
+  gsap.registerPlugin(MorphSVGPlugin);
+  document.querySelectorAll<HTMLElement>('.plane-col').forEach((col) => {
+    const frames = [...col.querySelectorAll<HTMLElement>('.plane-frame')];
+    col.querySelector('[data-play="stop"]')?.addEventListener('click', () => {
+      frames.forEach((f, i) => (f.style.display = i ? 'none' : ''));
+      let i = 0;
+      const id = setInterval(() => {
+        frames[i].style.display = 'none';
+        if (++i >= frames.length) return clearInterval(id), (frames[0].style.display = '');
+        frames[i].style.display = '';
+      }, 160);
+    });
+    const svg = col.querySelector<SVGSVGElement>('.morph-svg')!;
+    const ds: string[] = JSON.parse(svg.dataset.morph!);
+    col.querySelector('[data-play="morph"]')?.addEventListener('click', () => {
+      const path = svg.querySelector('path')!;
+      gsap.timeline().set(path, { attr: { d: ds[0] } }).to(path, { morphSVG: ds[1], duration: 0.4, ease: 'power2.inOut' }).to(path, { morphSVG: ds[2], duration: 0.4, ease: 'power2.inOut' });
+    });
+  });
   // Pose every articulated part at its maximum planned angle to inspect the joints.
   const MAX: Record<string, string> = { head: '3', forearm: '-5', handBack: '-4', handFront: '4', hand: '-6', slotLid: '-25' };
   document.querySelectorAll<SVGGElement>('.review-max [data-part]').forEach((g) => {

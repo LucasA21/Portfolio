@@ -1,18 +1,42 @@
 ---
-// Page-long ink line drawn with the scroll (src/scripts/motion/thread.ts builds its path from the scenes' anchors).
+// Paper plane flight layer: hidden route geometry, short fading trail behind the plane, and the plane itself (src/scripts/motion/flight.ts positions everything).
+// Variant A of the plane was chosen in plan-avion-de-papel (B and C stay in src/components/planes/ for later tests).
+import plane from './planes/a-plane.svg?raw';
+import pinned from './planes/a-plane-pinned.svg?raw';
+import unfold1 from './planes/a-unfold-1.svg?raw';
+import unfold2 from './planes/a-unfold-2.svg?raw';
+import sheet from './planes/a-sheet.svg?raw';
+import fold1 from './planes/a-fold-1.svg?raw';
+import fold2 from './planes/a-fold-2.svg?raw';
+
+const inner = (svg: string) => svg.replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+const frames = { plane, pinned, 'unfold-1': unfold1, 'unfold-2': unfold2, sheet, 'fold-1': fold1, 'fold-2': fold2 };
 ---
 
 <svg
   data-thread
   aria-hidden="true"
-  class="pointer-events-none absolute left-0 top-0 z-[5] w-full hidden lg:block"
+  class="pointer-events-none absolute left-0 top-0 z-[5] w-full"
   fill="none"
   stroke="#531F1F"
   stroke-width="2.6"
   stroke-linecap="round"
   stroke-linejoin="round"
 >
-  <path data-thread-seg="a0" d="" />
-  <path data-thread-seg="a1" d="" />
-  <path data-thread-seg="b" d="" />
+  <g data-routes stroke="none">
+    <path data-flight-route="a" d="" />
+    <path data-flight-route="b" d="" />
+  </g>
+  <g data-trails>
+    {['a', 'b'].map((k) => [[0.25, 1.1], [0.55, 1.8], [0.95, 2.6]].map(([o, w]) => <path data-trail={k} d="" opacity={o} stroke-width={w} />))}
+  </g>
+  <g data-ring stroke="#a8433a" stroke-width="2.2"></g>
+  <g data-flash stroke="#a8433a" stroke-width="2.4" opacity="0">
+    <circle r="16" /><circle r="26" opacity="0.5" />
+  </g>
+  <g data-plane style="opacity:0">
+    <g transform="translate(-62 -36)">
+      {Object.entries(frames).map(([name, svg]) => <g data-frame={name} style={name === 'plane' ? '' : 'display:none'} set:html={inner(svg)} />)}
+    </g>
+  </g>
 </svg>

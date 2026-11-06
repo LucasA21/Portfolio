@@ -15,12 +15,21 @@ sys.setrecursionlimit(100000)
 
 im = io.imread(SRC)
 ink = im[..., 3] > 110
+# The envelope the old thread drew on the board is gone: the paper plane now pins there instead.
+_lab = measure.label(ink, connectivity=2)
+for _r in measure.regionprops(_lab):
+    if 1340 < _r.centroid[1] < 1450 and 740 < _r.centroid[0] < 830 and _r.area > 1000:
+        im[_lab == _r.label, 3] = 0
+ink = im[..., 3] > 110
+import tempfile
+SRC_CLEAN = os.path.join(tempfile.mkdtemp(), 'sobre-mi-clean.png')
+io.imsave(SRC_CLEAN, im, check_contrast=False)
 ys, xs = np.nonzero(ink)
 M = 30
 X0, Y0, X1, Y1 = xs.min() - M, ys.min() - M, xs.max() + M, ys.max() + M
 W, H = X1 - X0, Y1 - Y0
 SCALE = 0.75
-subprocess.run(['magick', SRC, '-crop', f'{W}x{H}+{X0}+{Y0}', '+repage', '-resize', f'{round(W * SCALE)}x', '-quality', '88', '-define', 'webp:alpha-quality=95', WEBP], check=True)
+subprocess.run(['magick', SRC_CLEAN, '-crop', f'{W}x{H}+{X0}+{Y0}', '+repage', '-resize', f'{round(W * SCALE)}x', '-quality', '88', '-define', 'webp:alpha-quality=95', WEBP], check=True)
 
 # ---- skeleton -> polylines (px of the source canvas) ----
 dist = __import__('scipy.ndimage', fromlist=['x']).distance_transform_edt(ink)

@@ -9,7 +9,7 @@ import { initReveal } from './reveal';
 import { initHero } from './hero';
 import { initAbout } from './about';
 import { initContact } from './contact';
-import { initThread } from './thread';
+import { initFlight } from './flight';
 
 gsap.registerPlugin(ScrollTrigger, DrawSVGPlugin, MorphSVGPlugin, SplitText);
 
@@ -21,8 +21,8 @@ const QUERIES = {
   reduce: '(prefers-reduced-motion: reduce)',
 };
 
-// Order matters: the thread drives the about sketch and the contact delivery.
-const scenes = [initReveal, initHero, initAbout, initContact, initThread];
+// Order matters: the flight drives the about sketch and the contact delivery.
+const scenes = [initReveal, initHero, initAbout, initContact, initFlight];
 
 gsap.matchMedia().add(QUERIES, (context) => {
   const ctx = context.conditions as MotionContext;
