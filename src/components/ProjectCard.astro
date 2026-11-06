@@ -1,5 +1,4 @@
 ---
-import { Icon } from "astro-icon/components";
 import Doodle from './Doodle.astro';
 import { ICON_OPTIONS, type CardIcon } from '../utils/icons';
 import { toHTML } from '@portabletext/to-html';
@@ -14,6 +13,8 @@ interface Props {
   link?: string;
   mainImage?: string;
   gallery?: string[];
+  screenshot?: string;
+  screenshotAlt?: string;
 }
 
 const { 
@@ -25,8 +26,11 @@ const {
   icon,
   link = "#",
   mainImage = "",
-  gallery 
+  gallery,
+  screenshot,
+  screenshotAlt,
 } = Astro.props;
+const dev = import.meta.env.DEV;
 
 const byTitle: Record<string, CardIcon> = {
   thejudex: 'search',
@@ -46,40 +50,25 @@ const projectData = JSON.stringify({ title, description, contentHtml, tags: safe
 ---
 
 <div
-  class="project-card fade-up group flex flex-col w-full md:w-[calc((100%-2rem)/2)] lg:w-[calc((100%-4rem)/3)] bg-main-bg border border-stroke/50 rounded-[32px] hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-accent-brown/5 hover:border-accent-brown/20 transition-[transform,border-color,box-shadow] duration-500 ease-out h-full cursor-pointer"
+  class="project-card fade-up group relative flex flex-col w-full bg-main-bg border border-stroke/50 rounded-[28px] hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-accent-brown/5 hover:border-accent-brown/20 transition-[transform,border-color,box-shadow] duration-500 ease-out h-full cursor-pointer"
   data-project={projectData}
 >
-  <div class="flex flex-col flex-1 p-7 pt-6">
-    <Doodle name={scene} class="h-28 w-auto mx-auto mb-4" />
-    <div class="flex justify-between items-start mb-3">
-      <h3 class="text-3xl font-medium tracking-wider text-accent-brown">{title}</h3>
-      <div class="mt-1 text-accent-brown/60 group-hover:text-accent-brown group-hover:translate-x-1 group-hover:-translate-y-1 transition-all duration-500 ease-out" aria-hidden="true">
-        <Icon name="lucide:maximize-2" size={22} />
-      </div>
+  <div class="flex flex-col flex-1 p-3 pb-5">
+    <div class="rounded-2xl overflow-hidden border border-stroke/70 bg-wave-bg aspect-[16/10] flex items-center justify-center mb-4">
+      {screenshot ? (
+        <img src={screenshot} alt={screenshotAlt ?? ''} class="w-full h-full object-cover object-top" loading="lazy" />
+      ) : dev ? (
+        <span class="text-[15px] text-text-dark/80">[captura]</span>
+      ) : (
+        <Doodle name={scene} class="h-20 w-auto" />
+      )}
     </div>
 
-    <p class="text-lg leading-[150%] text-text-dark/85 mb-5 line-clamp-3 font-normal">
-      {description}
-    </p>
-
-    <div class="mt-auto flex flex-col gap-3">
-      {safeTags.length > 0 && (
-        <ul class="flex flex-wrap gap-2 pb-2">
-          {safeTags.slice(0, 2).map((tag) => (
-            <li class="whitespace-nowrap text-sm px-4 py-1.5 rounded-full border border-stroke bg-white/30 text-text-dark tracking-wide font-medium">
-              {tag}
-            </li>
-          ))}
-          {safeTags.length > 2 && (
-            <li class="whitespace-nowrap text-sm px-3 py-1.5 text-text-dark/80 font-medium">+{safeTags.length - 2}</li>
-          )}
-        </ul>
-      )}
-
-      <button class="flex items-center gap-2 text-sm font-semibold text-accent-brown tracking-[0.15em] uppercase group/btn" aria-label={`Ver detalles de ${title}`}>
-        Ver detalles
-        <span class="w-8 h-px bg-accent-brown/50 group-hover/btn:w-12 transition-all duration-300"></span>
-      </button>
+    <div class="px-3 flex flex-col flex-1">
+      <h3 class="text-2xl font-semibold tracking-wide text-accent-brown mb-1.5">{title}</h3>
+      <p class="text-base leading-[150%] text-text-dark/90 mb-3 line-clamp-2">{description}</p>
+      {safeTags.length > 0 && <p class="mt-auto text-[13px] tracking-wide text-text-dark/80">{safeTags.slice(0, 3).join(' · ')}</p>}
+      <button type="button" class="absolute inset-0 rounded-[28px] cursor-pointer" aria-label={`Ver detalles de ${title}`}></button>
     </div>
   </div>
 </div>

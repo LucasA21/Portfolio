@@ -20,6 +20,9 @@ importers:
       '@fontsource/halant':
         specifier: ^5.2.8
         version: 5.2.8
+      '@fontsource/kalam':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@iconify-json/lucide':
         specifier: ^1.2.103
         version: 1.2.103
@@ -1154,6 +1157,9 @@ packages:
 
   '@fontsource/halant@5.2.8':
     resolution: {integrity: sha512-3/LJslCoecAYSpOfMOj2hIIbd17rtaIFU9Z7EjoMxx/zU8MA9VM8DHIM+MvEBcnSMG/MQ6xEppJgDKWrDGVEoQ==}
+
+  '@fontsource/kalam@5.3.0':
+    resolution: {integrity: sha512-FDkVoDfPDCSN/eO81FOYtUI67eMgpVBJmjBtAqSL0PmEhJyeFY2biC+CR+yEttksgXR9+swpFdYmQTyjwBq80Q==}
 
   '@iarna/toml@2.2.3':
     resolution: {integrity: sha512-FmuxfCuolpLl0AnQ2NHSzoUKWEJDFl63qXjzdoWBVyFCXzMGm1spBzk7LeHNoVCiWCF7mRVms9e6jEV9+MoPbg==}
@@ -7392,6 +7398,8 @@ snapshots:
   '@floating-ui/utils@0.2.11': {}
 
   '@fontsource/halant@5.2.8': {}
+
+  '@fontsource/kalam@5.3.0': {}
 
   '@iarna/toml@2.2.3': {}
 

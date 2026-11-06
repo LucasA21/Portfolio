@@ -28,7 +28,13 @@
     font-weight: 700;
     src: url(@fontsource/halant/files/halant-latin-700-normal.woff2) format('woff2');
 }
-
+@font-face {
+    font-family: 'Kalam';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 400;
+    src: url(@fontsource/kalam/files/kalam-latin-400-normal.woff2) format('woff2');
+}
 
 @theme {
     --color-main-bg: #F6F5F1;
@@ -39,6 +45,8 @@
     --color-stroke: #E0D6D6;
 
     --font-sans: "Halant", sans-serif;
+    --font-hand: "Kalam", cursive;
+    --color-accent-warm: #a8433a;
 }
 
 html, body {
@@ -197,4 +205,11 @@ a:not([class]) {
 * {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--color-accent-brown) 30%, transparent) var(--color-main-bg);
+}
+
+/* Cards lift 4 px while the paper plane passes them (see src/scripts/motion/flight.ts). */
+.project-card, .project-featured { top: 0; }
+.project-card.plane-pass, .project-featured.plane-pass { top: -4px; }
+@media (prefers-reduced-motion: no-preference) {
+  .project-card, .project-featured { transition: transform 0.5s ease-out, border-color 0.5s ease-out, box-shadow 0.5s ease-out, top 0.3s ease-out; }
 }

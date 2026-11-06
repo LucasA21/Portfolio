@@ -4,8 +4,8 @@ import { sanityClient } from 'sanity:client';
 
 const SETTINGS_QUERY = /* groq */ `*[_id == "siteSettings"][0]{
   seo { title, description },
-  hero { greeting, title, subtitle, ctaLabel },
-  about { title, text, cvUrl, cvLabel },
+  hero { greeting, title, subtitle, lead, ctaLabel, secondaryLabel },
+  about { title, text, now, cvUrl, cvLabel },
   contact { tagline, description, email, ctaLabel },
   footer { copyright, navLinks[] { _key, label, href } },
   socialLinks[] { _key, platform, url }
@@ -21,6 +21,9 @@ const PROJECTS_QUERY = /* groq */ `*[_type == "project"] | order(order asc) {
   link,
   "mainImage": mainImage.asset->url,
   "gallery": gallery[].asset->url,
+  "screenshot": screenshot.asset->url,
+  "screenshotAlt": screenshot.alt,
+  highlights[] { value, label },
   order,
   featured
 }`;
@@ -29,8 +32,8 @@ const PROJECTS_QUERY = /* groq */ `*[_type == "project"] | order(order asc) {
 
 export interface SiteSettings {
   seo?: { title?: string; description?: string };
-  hero?: { greeting?: string; title?: string; subtitle?: string; ctaLabel?: string };
-  about?: { title?: string; text?: string; cvUrl?: string; cvLabel?: string };
+  hero?: { greeting?: string; title?: string; subtitle?: string; lead?: string; ctaLabel?: string; secondaryLabel?: string };
+  about?: { title?: string; text?: string; now?: string[]; cvUrl?: string; cvLabel?: string };
   contact?: { tagline?: string; description?: string; email?: string; ctaLabel?: string };
   footer?: { copyright?: string; navLinks?: { _key: string; label: string; href: string }[] };
   socialLinks?: { _key: string; platform: string; url: string }[];
@@ -46,6 +49,9 @@ export interface Project {
   link?: string;
   mainImage?: string;
   gallery?: string[];
+  screenshot?: string;
+  screenshotAlt?: string;
+  highlights?: { value?: string; label?: string }[];
   order?: number;
   featured?: boolean;
 }
@@ -77,10 +83,12 @@ export async function getSiteData(): Promise<SiteData> {
 
   const settings: SiteSettings = {
     hero: {
-      greeting: rawSettings?.hero?.greeting ?? '¡Hola! Soy Lucas,',
-      title: rawSettings?.hero?.title ?? 'Frontend Developer',
-      subtitle: rawSettings?.hero?.subtitle ?? 'especializado en UI/UX.',
-      ctaLabel: rawSettings?.hero?.ctaLabel ?? 'Proyectos',
+      greeting: rawSettings?.hero?.greeting ?? 'hola, soy Lk',
+      title: rawSettings?.hero?.title ?? 'Diseño interfaces',
+      subtitle: rawSettings?.hero?.subtitle ?? 'y las llevo a producción.',
+      lead: rawSettings?.hero?.lead ?? 'Frontend desde Ushuaia, con Astro, React y TypeScript. Me importa que se entienda a primera vista y que cargue rápido.',
+      ctaLabel: rawSettings?.hero?.ctaLabel ?? 'Ver proyectos',
+      secondaryLabel: rawSettings?.hero?.secondaryLabel ?? 'Mandame un mensaje',
     },
     seo: {
       title: rawSettings?.seo?.title ?? 'Home',
@@ -88,18 +96,19 @@ export async function getSiteData(): Promise<SiteData> {
     },
     about: {
       title: rawSettings?.about?.title ?? 'Sobre mí',
-      text: rawSettings?.about?.text ?? 'Soy Lucas, frontend developer. Me importa que una interfaz se entienda a primera vista y se sienta rápida: cuido la jerarquía, el ritmo y los detalles de movimiento. Trabajo con Astro, React y TypeScript, y me animo a tocar el backend cuando el proyecto lo pide.',
+      text: rawSettings?.about?.text ?? 'Soy Lucas, frontend developer. Cuido la jerarquía, el ritmo y los detalles de movimiento, y me animo con el backend cuando el proyecto lo pide.',
+      now: rawSettings?.about?.now?.length ? rawSettings.about.now : ['5to año de Licenciatura en Sistemas, UNTDF'],
       cvUrl: rawSettings?.about?.cvUrl ?? '/cv.pdf',
       cvLabel: rawSettings?.about?.cvLabel ?? 'Descargar CV',
     },
     contact: {
-      tagline: rawSettings?.contact?.tagline ?? 'Hagamos equipo',
-      description: rawSettings?.contact?.description ?? 'Estoy con disponibilidad para sumarme a nuevos proyectos. Ya sea que tengas una idea en mente o simplemente quieras charlar sobre código o diseño, ¡escribime!',
+      tagline: rawSettings?.contact?.tagline ?? 'El mensaje llegó. Ahora te toca a vos.',
+      description: rawSettings?.contact?.description ?? 'Si tenés un proyecto o una búsqueda, escribime y te respondo.',
       email: rawSettings?.contact?.email ?? 'lucasaraya19@hotmail.com',
-      ctaLabel: rawSettings?.contact?.ctaLabel ?? 'HABLEMOS',
+      ctaLabel: rawSettings?.contact?.ctaLabel ?? 'Copiar mail',
     },
     footer: {
-      copyright: rawSettings?.footer?.copyright ?? 'Lucas Araya. All rights reserved.',
+      copyright: rawSettings?.footer?.copyright && !/all rights reserved/i.test(rawSettings.footer.copyright) ? rawSettings.footer.copyright : 'Lucas Araya. Dibujado y programado en Ushuaia.',
       navLinks: rawSettings?.footer?.navLinks ?? [
         { _key: 'about', label: 'Sobre mí', href: '#about' },
         { _key: 'projects', label: 'Proyectos', href: '#projects' },

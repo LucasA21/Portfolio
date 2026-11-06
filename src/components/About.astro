@@ -4,11 +4,14 @@ import AboutScene from './scenes/AboutScene.astro';
 interface Props {
   title: string;
   text: string;
+  now: string[];
   cvUrl?: string;
   cvLabel?: string;
 }
 
-const { title, text, cvUrl, cvLabel } = Astro.props;
+const { title, text, now, cvUrl, cvLabel } = Astro.props;
+// Missing data is never invented: dev shows a placeholder for the rest of the list.
+const items = import.meta.env.DEV && now.length < 2 ? [...now, '[lo que estés haciendo: trabajo, hackatón, aprendiendo X]'] : now;
 ---
 
 <section id="about" class="scroll-mt-[22vh] max-w-5xl mx-auto px-6 py-14 md:py-20 grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-10 md:gap-16">
@@ -20,8 +23,17 @@ const { title, text, cvUrl, cvLabel } = Astro.props;
     <h2 class="text-3xl md:text-4xl font-medium tracking-wider text-accent-brown mb-6">{title}</h2>
     <p class="text-lg md:text-xl leading-[160%] text-text-dark/90 max-w-[60ch] text-pretty">{text}</p>
 
+    {items.length > 0 && (
+      <div class="mt-8 pt-5 border-t border-text-dark/20 w-full max-w-[60ch]">
+        <p class="text-[13px] tracking-[0.18em] uppercase text-text-dark/80 mb-2">Ahora mismo</p>
+        <ul class="flex flex-col gap-1 text-base md:text-lg text-text-dark/90">
+          {items.map((item) => <li>{item}</li>)}
+        </ul>
+      </div>
+    )}
+
     {cvUrl && (
-      <a href={cvUrl} download class="group/cv mt-10 inline-flex items-center gap-3 bg-accent-brown text-main-bg px-10 py-3.5 rounded-full text-sm font-medium tracking-widest hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-300">
+      <a href={cvUrl} download class="group/cv mt-8 inline-flex items-center gap-3 min-h-11 border border-accent-brown/40 text-accent-brown px-8 py-3 rounded-full text-sm font-medium tracking-widest hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-300">
         <svg class="w-4 h-4 transition-transform duration-300 group-hover/cv:translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
         {cvLabel?.toUpperCase()}
       </a>

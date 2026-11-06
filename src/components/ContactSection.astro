@@ -10,9 +10,10 @@ interface ContactData {
 
 interface Props {
   contact: ContactData;
+  linkedin?: string;
 }
 
-const { contact } = Astro.props;
+const { contact, linkedin } = Astro.props;
 
 ---
 
@@ -27,18 +28,19 @@ const { contact } = Astro.props;
         {contact.description}
       </p>
   
-      <a 
-        href={`mailto:${contact.email}`}
-        class="group/contact flex flex-col items-center md:items-start gap-6 hover:opacity-90 transition-all"
-      >
-        <span class="text-[clamp(1.2rem,6vw,40px)] font-medium tracking-wide text-accent-brown break-all md:break-normal">
-          {contact.email}
-        </span>
-
-        <span class="bg-accent-brown text-white px-10 py-3.5 rounded-full text-sm font-medium tracking-widest active:scale-95 group-hover/contact:shadow-lg group-hover/contact:-translate-y-1 transition-all duration-300 inline-block">
-          {contact.ctaLabel}
-        </span>
+      <a href={`mailto:${contact.email}`} class="inline-flex items-center min-h-11 text-[clamp(1rem,5vw,40px)] font-medium tracking-wide text-accent-brown break-all md:break-normal underline decoration-2 underline-offset-[10px] decoration-accent-brown/60 hover:decoration-accent-brown transition-colors">
+        {contact.email}
       </a>
+
+      <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-2">
+        <button type="button" data-copy-mail={contact.email} class="inline-flex items-center min-h-11 bg-accent-brown text-main-bg px-8 py-3 rounded-full text-sm font-medium tracking-widest active:scale-95 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
+          Copiar mail
+        </button>
+        {linkedin && (
+          <a href={linkedin} target="_blank" rel="noopener noreferrer" class="inline-flex items-center min-h-11 border border-accent-brown/40 text-accent-brown px-8 py-3 rounded-full text-sm font-medium tracking-widest hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all duration-300">LinkedIn</a>
+        )}
+        <span class="font-hand text-accent-warm text-lg" role="status" aria-live="polite" data-copy-status></span>
+      </div>
     </div>
   </div>
 
@@ -51,3 +53,20 @@ const { contact } = Astro.props;
 
 </section>
 
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-mail]').forEach((btn) => {
+    const status = btn.parentElement?.querySelector<HTMLElement>('[data-copy-status]');
+    let t: number | undefined;
+    btn.addEventListener('click', async () => {
+      let ok = false;
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copyMail!);
+        ok = true;
+      } catch {}
+      if (status) status.textContent = ok ? 'Copiado' : 'No se pudo copiar, usá el link del mail';
+      clearTimeout(t);
+      t = window.setTimeout(() => status && (status.textContent = ''), 2500);
+    });
+  });
+</script>

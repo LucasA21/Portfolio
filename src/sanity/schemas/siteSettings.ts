@@ -56,10 +56,22 @@ export const siteSettings = defineType({
           description: 'Ej: "especializado en UI/UX."',
         }),
         defineField({
+          name: 'lead',
+          title: 'Bajada',
+          type: 'text',
+          rows: 3,
+        }),
+        defineField({
           name: 'ctaLabel',
-          title: 'Texto del botón',
+          title: 'Texto del botón principal',
           type: 'string',
-          description: 'Ej: "Proyectos"',
+          description: 'Ej: "Ver proyectos"',
+        }),
+        defineField({
+          name: 'secondaryLabel',
+          title: 'Texto del botón secundario',
+          type: 'string',
+          description: 'Ej: "Mandame un mensaje" (lleva a Contacto)',
         }),
       ],
     }),
@@ -72,6 +84,13 @@ export const siteSettings = defineType({
       fields: [
         defineField({ name: 'title', title: 'Título', type: 'string', description: 'Ej: "Sobre mí"' }),
         defineField({ name: 'text', title: 'Texto', type: 'text', rows: 5 }),
+        defineField({
+          name: 'now',
+          title: 'Ahora mismo',
+          type: 'array',
+          description: 'Lista corta de qué estás haciendo hoy (estudio, trabajo, aprendiendo). Vacío: queda solo "5to año de Licenciatura en Sistemas, UNTDF".',
+          of: [defineArrayMember({ type: 'string' })],
+        }),
         defineField({ name: 'cvUrl', title: 'Link al CV (PDF)', type: 'url', description: 'Si queda vacío se usa /cv.pdf (archivo en la carpeta public).', validation: (rule) => rule.uri({ allowRelative: true }) }),
         defineField({ name: 'cvLabel', title: 'Texto del botón de CV', type: 'string', description: 'Ej: "Descargar CV"' }),
       ],

@@ -81,6 +81,39 @@ export const project = defineType({
       ],
     }),
     defineField({
+      name: 'screenshot',
+      title: 'Captura (card)',
+      type: 'image',
+      description: 'Captura real del proyecto para la card. Sin captura se usa el ícono dibujado.',
+      options: { hotspot: true },
+      fields: [
+        defineField({
+          name: 'alt',
+          title: 'Texto alternativo',
+          type: 'string',
+          description: 'Describí la captura para accesibilidad',
+          validation: (rule) => rule.required(),
+        }),
+      ],
+    }),
+    defineField({
+      name: 'highlights',
+      title: 'Datos destacados',
+      type: 'array',
+      description: 'Hasta 3 datos para la card destacada (ej: 12.000 / páginas indexadas).',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          fields: [
+            defineField({ name: 'value', title: 'Valor', type: 'string', validation: (r) => r.required() }),
+            defineField({ name: 'label', title: 'Etiqueta', type: 'string', validation: (r) => r.required() }),
+          ],
+          preview: { select: { title: 'value', subtitle: 'label' } },
+        }),
+      ],
+      validation: (rule) => rule.max(3),
+    }),
+    defineField({
       name: 'order',
       title: 'Orden de aparición',
       type: 'number',
@@ -91,7 +124,7 @@ export const project = defineType({
       name: 'featured',
       title: 'Destacado',
       type: 'boolean',
-      description: 'Marcar como proyecto destacado',
+      description: 'Se muestra como card ancha arriba de la grilla (uno solo).',
       initialValue: false,
     }),
   ],

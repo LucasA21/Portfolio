@@ -2,14 +2,15 @@
 import HeroScene from './scenes/HeroScene.astro';
 
 interface Props {
+  greeting: string;
   title: string;
   subtitle: string;
+  lead: string;
   ctaLabel: string;
-  cvUrl?: string;
-  cvLabel?: string;
+  secondaryLabel: string;
 }
 
-const { title, subtitle, ctaLabel, cvUrl, cvLabel } = Astro.props;
+const { greeting, title, subtitle, lead, ctaLabel, secondaryLabel } = Astro.props;
 
 ---
 
@@ -17,30 +18,24 @@ const { title, subtitle, ctaLabel, cvUrl, cvLabel } = Astro.props;
   
   <div class="flex-1 w-full text-center md:text-left px-2 sm:px-6 md:pl-0 lg:pl-8 hero-animate-2 flex flex-col items-center md:items-start justify-center">
     
-    <!-- Saludo solo Mobile -->
-    <p class="md:hidden text-xl font-medium tracking-wider opacity-85 mb-4 text-text-dark">
-      ¡Hola! Soy <span class="font-semibold text-accent-brown">Lucas</span>
-    </p>
+    <p class="font-hand text-accent-warm text-xl mb-2">{greeting}</p>
 
     <h1 data-split class="text-[clamp(2.2rem,7vw,2.75rem)] leading-[120%] md:leading-[130%] tracking-normal md:tracking-wider font-normal max-w-[800px] text-balance">
       <span class="font-semibold text-accent-brown">{title}</span><br />
       {subtitle}
     </h1>
 
+    <p class="mt-6 text-lg leading-[160%] text-text-dark/90 max-w-[46ch] text-pretty">{lead}</p>
+
     <!-- Botón Desktop: se mantiene con el texto -->
     <div class="hidden md:flex flex-wrap gap-4 mt-10 md:mt-14 relative z-10 w-full justify-start">
-      <a href="#projects" class="btn-projects inline-flex bg-glass-card border border-stroke px-10 py-4 rounded-full text-base font-medium hover:shadow-lg transition-all items-center gap-3 cursor-pointer group active:scale-95">
+      <a href="#projects" class="btn-projects inline-flex bg-accent-brown text-main-bg px-10 py-4 rounded-full text-base font-medium hover:shadow-lg transition-all items-center gap-3 cursor-pointer group active:scale-95">
         {ctaLabel}
         <svg class="btn-projects-arrow w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 5v14M19 12l-7 7-7-7"/>
         </svg>
       </a>
-      {cvUrl && (
-        <a href={cvUrl} download class="group/cv inline-flex bg-accent-brown text-main-bg px-10 py-4 rounded-full text-base font-medium items-center gap-3 hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95">
-          <svg class="w-5 h-5 transition-transform duration-300 group-hover/cv:translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
-          {cvLabel}
-        </a>
-      )}
+      <a href="#contact" class="inline-flex bg-glass-card border border-accent-brown/40 text-accent-brown px-10 py-4 rounded-full text-base font-medium items-center hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95">{secondaryLabel}</a>
     </div>
   </div>
 
@@ -52,18 +47,13 @@ const { title, subtitle, ctaLabel, cvUrl, cvLabel } = Astro.props;
   <!-- Botón Mobile: aparece debajo de la imagen -->
   <div class="md:hidden w-full flex justify-center mt-2 hero-animate-2">
     <div class="relative z-10 flex flex-wrap justify-center gap-3">
-       <a href="#projects" class="btn-projects inline-flex bg-glass-card border border-stroke px-8 py-3.5 rounded-full text-sm font-medium hover:shadow-lg transition-all items-center gap-3 cursor-pointer group active:scale-95">
+       <a href="#projects" class="btn-projects inline-flex bg-accent-brown text-main-bg px-8 py-3.5 rounded-full text-sm font-medium hover:shadow-lg transition-all items-center gap-3 cursor-pointer group active:scale-95">
         {ctaLabel}
         <svg class="btn-projects-arrow w-4 h-4 group-hover:translate-x-1.5 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 5v14M19 12l-7 7-7-7"/>
         </svg>
       </a>
-      {cvUrl && (
-        <a href={cvUrl} download class="group/cv inline-flex bg-accent-brown text-main-bg px-8 py-3.5 rounded-full text-sm font-medium items-center gap-3 hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95">
-          <svg class="w-4 h-4 transition-transform duration-300 group-hover/cv:translate-y-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>
-          {cvLabel}
-        </a>
-      )}
+      <a href="#contact" class="inline-flex bg-glass-card border border-accent-brown/40 text-accent-brown px-8 py-3.5 rounded-full text-sm font-medium items-center hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95">{secondaryLabel}</a>
     </div>
   </div>
 

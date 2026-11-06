@@ -1,0 +1,62 @@
+---
+import { toHTML } from '@portabletext/to-html';
+import Doodle from './Doodle.astro';
+import type { Project } from '../utils/sanity';
+import { ICON_OPTIONS, type CardIcon } from '../utils/icons';
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+const { title, description, content, tags = [], link, mainImage = '', gallery = [], screenshot, screenshotAlt, icon } = project;
+
+// Missing data is never invented: dev shows example placeholders (bracketed values), production hides them.
+// The real numbers go in the project's `highlights` in Sanity.
+const EXAMPLES = [
+  { value: '[ej: 12.000]', label: 'páginas indexadas' },
+  { value: '[ej: 95+]', label: 'Lighthouse' },
+  { value: '[ej: SEO + front]', label: 'qué hice yo' },
+];
+const dev = import.meta.env.DEV;
+const highlights = (project.highlights?.length ? project.highlights : dev ? EXAMPLES : []).slice(0, 3);
+const scene = (ICON_OPTIONS.some((o) => o.value === icon) ? icon : 'search') as CardIcon;
+const contentHtml = content?.length ? toHTML(content) : description;
+const projectData = JSON.stringify({ title, description, contentHtml, tags, link, mainImage, gallery });
+---
+
+<article class="project-featured fade-up grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6 md:gap-10 bg-main-bg border border-stroke/50 rounded-[32px] p-5 md:p-7 mb-8 relative z-10" data-project={projectData}>
+  <div class="rounded-2xl overflow-hidden border border-stroke/70 bg-wave-bg aspect-[16/10] flex items-center justify-center">
+    {screenshot ? (
+      <img src={screenshot} alt={screenshotAlt ?? ''} class="w-full h-full object-cover object-top" loading="lazy" />
+    ) : dev ? (
+      <span class="text-[15px] text-text-dark/80">[captura real de {title}]</span>
+    ) : (
+      <Doodle name={scene} class="h-32 w-auto" />
+    )}
+  </div>
+
+  <div class="flex flex-col justify-center gap-4 min-w-0">
+    <p class="text-[13px] tracking-[0.18em] uppercase text-text-dark/80">Destacado · en producción</p>
+    <h3 class="text-3xl md:text-4xl font-semibold tracking-wide text-accent-brown">{title}</h3>
+    <p class="text-lg leading-[155%] text-text-dark/90">{description}</p>
+
+    {highlights.length > 0 && (
+      <dl class="grid grid-cols-3 gap-4 border-t border-text-dark/60 pt-3">
+        {highlights.map((h) => (
+          <div>
+            <dt class="text-xl font-semibold text-accent-brown">{h.value}</dt>
+            <dd class="text-[15px] leading-tight text-text-dark/80">{h.label}</dd>
+          </div>
+        ))}
+      </dl>
+    )}
+
+    <div class="flex flex-wrap items-center gap-x-6 gap-y-1">
+      {link && link !== '#' && (
+        <a href={link} target="_blank" rel="noopener noreferrer" class="inline-flex items-center min-h-11 text-base font-medium text-accent-brown underline underline-offset-4 decoration-accent-brown/50 hover:decoration-accent-brown">Ver el sitio</a>
+      )}
+      <button type="button" class="inline-flex items-center min-h-11 text-base font-medium text-accent-brown underline underline-offset-4 decoration-accent-brown/50 hover:decoration-accent-brown cursor-pointer">Cómo lo hice</button>
+    </div>
+  </div>
+</article>

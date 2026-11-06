@@ -1,5 +1,6 @@
 ---
 import ProjectCard from './ProjectCard.astro';
+import FeaturedProject from './FeaturedProject.astro';
 import type { Project } from '../utils/sanity';
 import ProjectModal from './ProjectModal.astro';
 
@@ -8,14 +9,22 @@ interface Props {
 }
 
 const { projects } = Astro.props;
+// One featured card on top; the rest go in the grid. TheJudex is the fallback while nothing is flagged in Sanity.
+const featured = projects.find((p) => p.featured) ?? projects.find((p) => p.title.toLowerCase() === 'thejudex');
+const rest = projects.filter((p) => p !== featured);
 ---
 
 <div class="w-full bg-wave-bg pt-12 pb-20 min-h-[400px]">
   <section id="projects" class="max-w-5xl mx-auto px-6 scroll-mt-[22vh] relative z-10">
-    <h2 class="text-3xl md:text-4xl font-medium tracking-wider text-accent-brown mb-10 text-center md:text-left">Proyectos</h2>
+    <div class="flex flex-col md:flex-row md:items-baseline md:justify-start md:gap-6 gap-1 mb-10 text-center md:text-left">
+      <h2 class="text-3xl md:text-4xl font-medium tracking-wider text-accent-brown">Proyectos</h2>
+      <p class="font-hand text-accent-warm text-xl md:-rotate-1">uno en producción, los demás para aprender</p>
+    </div>
 
-    <div id="projects-container" class="flex flex-wrap justify-center gap-8 stagger-group">
-      {projects.map((project) => (
+    {featured && <FeaturedProject project={featured} />}
+
+    <div id="projects-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger-group">
+      {rest.map((project) => (
         <ProjectCard
           id={project._id}
           title={project.title}
@@ -26,6 +35,8 @@ const { projects } = Astro.props;
           link={project.link}
           mainImage={project.mainImage}
           gallery={project.gallery}
+          screenshot={project.screenshot}
+          screenshotAlt={project.screenshotAlt}
         />
       ))}
     </div>
@@ -56,7 +67,7 @@ const { projects } = Astro.props;
     if (grid && moreWrap && moreBtn) {
       const cards = [...grid.querySelectorAll<HTMLElement>('.project-card')];
       let expanded = false;
-      const limit = () => (matchMedia('(min-width: 1024px)').matches ? 6 : matchMedia('(min-width: 768px)').matches ? 4 : 3);
+      const limit = () => (matchMedia('(min-width: 1024px)').matches ? 8 : matchMedia('(min-width: 768px)').matches ? 4 : 3);
       const label = document.getElementById('projects-more-label')!;
       const arrow = document.getElementById('projects-more-arrow')!;
       const apply = () => {
@@ -106,7 +117,7 @@ const { projects } = Astro.props;
     // Lógica del Modal Rediseñado (Vertical + Carrusel)
     const modal = document.getElementById('project-modal') as HTMLDialogElement;
     const closeBtn = document.getElementById('close-modal');
-    const cards = document.querySelectorAll('.project-card');
+    const cards = document.querySelectorAll('.project-card, .project-featured');
     const modalImgContainer = document.getElementById('modal-image-container');
 
     if (!modal || !closeBtn) return;
@@ -207,7 +218,8 @@ const { projects } = Astro.props;
     }
 
     cards.forEach(card => {
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (e) => {
+            if ((e.target as Element).closest('a')) return; // "Ver el sitio" navigates, it does not open the modal
             const data = JSON.parse(card.getAttribute('data-project') || '{}');
             modalImages = data.mainImage ? [data.mainImage, ...(data.gallery || [])] : (data.gallery || []);
             currentImgIndex = 0;
