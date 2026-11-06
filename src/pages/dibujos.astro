@@ -1,20 +1,72 @@
 ---
-// Dev-only gallery of every Doodle icon. Returns 404 in production.
+// Dev-only gallery: icons plus the articulated scenes, each next to its original and as an overlay.
 import Layout from '../layouts/Layout.astro';
 import Doodle from '../components/Doodle.astro';
+import HeroScene from '../components/scenes/HeroScene.astro';
+import ContactScene from '../components/scenes/ContactScene.astro';
+import AboutScene from '../components/scenes/AboutScene.astro';
 import { ICON_OPTIONS } from '../utils/icons';
 
 if (!import.meta.env.DEV) return new Response(null, { status: 404 });
 const scenes = [...ICON_OPTIONS.map((o) => o.value), 'notfound'] as const;
+const pairs: { title: string; original: string; Comp: any; props: Record<string, string> }[] = [
+  { title: 'Hero', original: '/hero-illustration.svg', Comp: HeroScene, props: {} },
+  { title: 'Contacto (escritorio)', original: '/contact-señalar.svg', Comp: ContactScene, props: { variant: 'desktop' } },
+  { title: 'Contacto (celular)', original: '/contact-apoyado.svg', Comp: ContactScene, props: { variant: 'mobile' } },
+];
 ---
 
 <Layout title="Dibujos">
-  <div class="max-w-5xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-    {scenes.map((scene) => (
-      <figure class="fade-up flex flex-col items-center gap-3">
-        <Doodle name={scene} class="w-full h-auto" />
-        <figcaption class="text-lg text-accent-brown">{scene}</figcaption>
-      </figure>
+  <div class="max-w-6xl mx-auto px-6 py-12 flex flex-col gap-16">
+    {pairs.map(({ title, original, Comp, props }) => (
+      <section data-review={title}>
+        <h2 class="text-2xl text-accent-brown mb-4">{title}</h2>
+        <div class="grid grid-cols-3 gap-6 items-end">
+          <figure><img src={original} alt="" class="w-full" /><figcaption>Original</figcaption></figure>
+          <figure><Comp {...props} class="w-full h-auto" /><figcaption>Nuevo</figcaption></figure>
+          <figure class="relative">
+            <img src={original} alt="" class="w-full opacity-30" />
+            <div class="absolute inset-0 review-overlay"><Comp {...props} class="w-full h-auto" /></div>
+            <figcaption>Superposición</figcaption>
+          </figure>
+        </div>
+      </section>
     ))}
+    <section data-review="Sobre mí">
+      <h2 class="text-2xl text-accent-brown mb-4">Sobre mí</h2>
+      <div class="max-w-xl"><AboutScene class="w-full h-auto" /></div>
+    </section>
+    <section data-review="Articulaciones">
+      <h2 class="text-2xl text-accent-brown mb-4">Ángulo máximo de cada articulación</h2>
+      <div class="grid grid-cols-3 gap-6 items-end review-max">
+        <HeroScene class="w-full h-auto" />
+        <ContactScene variant="desktop" class="w-full h-auto" />
+        <ContactScene variant="mobile" class="w-full h-auto" />
+      </div>
+    </section>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+      {scenes.map((scene) => (
+        <figure class="fade-up flex flex-col items-center gap-3">
+          <Doodle name={scene} class="w-full h-auto" />
+          <figcaption class="text-lg text-accent-brown">{scene}</figcaption>
+        </figure>
+      ))}
+    </div>
   </div>
 </Layout>
+
+<style is:global>
+  .review-overlay [data-part] path:not([fill]), .review-overlay [data-part] ellipse { stroke: #1f6feb; }
+  .review-overlay [data-part] [fill="#531F1F"] { fill: #1f6feb; }
+</style>
+
+<script>
+  // Pose every articulated part at its maximum planned angle to inspect the joints.
+  const MAX: Record<string, string> = { head: '3', forearm: '-5', handBack: '-4', handFront: '4', hand: '-6', slotLid: '-25' };
+  document.querySelectorAll<SVGGElement>('.review-max [data-part]').forEach((g) => {
+    const angle = MAX[g.dataset.part ?? ''];
+    if (!angle || !g.dataset.origin) return;
+    const [x, y] = g.dataset.origin.split(' ');
+    g.setAttribute('transform', `rotate(${angle} ${x} ${y})`);
+  });
+</script>

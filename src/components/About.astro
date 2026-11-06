@@ -1,4 +1,6 @@
 ---
+import AboutScene from './scenes/AboutScene.astro';
+
 interface Props {
   title: string;
   text: string;
@@ -10,30 +12,8 @@ const { title, text, cvUrl, cvLabel } = Astro.props;
 ---
 
 <section id="about" class="scroll-mt-[22vh] max-w-5xl mx-auto px-6 py-14 md:py-20 grid md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center gap-10 md:gap-16">
-  <div class="fade-up order-2 md:order-1 w-full max-w-[420px] mx-auto md:mx-0">
-    <svg viewBox="0 0 400 280" role="img" aria-label="Ilustración de un monitor con código, una taza de café y una planta" class="w-full h-auto" fill="none" stroke="#531F1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <g class="line-draw">
-        <path pathLength="1" d="M10 252 H390" />
-        <rect pathLength="1" x="50" y="40" width="180" height="125" rx="12" />
-        <path pathLength="1" d="M50 70 H230" />
-        <circle pathLength="1" cx="68" cy="55" r="3" />
-        <circle pathLength="1" cx="82" cy="55" r="3" />
-        <circle pathLength="1" cx="96" cy="55" r="3" />
-        <path pathLength="1" d="M105 100 L82 118 L105 136" />
-        <path pathLength="1" d="M153 95 L137 142" />
-        <path pathLength="1" d="M178 100 L201 118 L178 136" />
-        <path pathLength="1" d="M140 165 V252 M110 252 H170" />
-        <path pathLength="1" d="M248 192 H308 V232 Q308 252 288 252 H268 Q248 252 248 232 Z" />
-        <path pathLength="1" d="M308 202 C330 202 330 236 308 236" />
-        <path pathLength="1" d="M346 252 L351 222 H379 L384 252" />
-        <path pathLength="1" d="M365 222 V190" />
-        <path pathLength="1" d="M365 222 C363 200 358 190 346 182" />
-        <path pathLength="1" d="M365 208 C368 196 378 190 390 188" />
-      </g>
-      <g class="steam" style="animation-delay:0s"><path d="M268 178 C262 168 274 162 268 150" /></g>
-      <g class="steam" style="animation-delay:1.1s"><path d="M280 178 C274 168 286 162 280 150" /></g>
-      <g class="steam" style="animation-delay:2.1s"><path d="M292 178 C286 168 298 162 292 150" /></g>
-    </svg>
+  <div class="fade-up order-2 md:order-1 w-full max-w-[440px] mx-auto md:mx-0">
+    <AboutScene class="w-full h-auto block" />
   </div>
 
   <div class="fade-up order-1 md:order-2 flex flex-col items-center md:items-start text-center md:text-left">

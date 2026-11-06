@@ -1,6 +1,5 @@
 ---
-import fs from 'node:fs';
-import path from 'node:path';
+import HeroScene from './scenes/HeroScene.astro';
 
 interface Props {
   title: string;
@@ -12,11 +11,6 @@ interface Props {
 
 const { title, subtitle, ctaLabel, cvUrl, cvLabel } = Astro.props;
 
-// Cargar SVGs para inlinear (Mejora LCP)
-const heroSvg = fs.readFileSync(path.resolve('./public/hero-illustration.svg'), 'utf-8')
-  .replace(/width=".*?"/, 'width="100%"')
-  .replace(/height=".*?"/, 'height="100%"')
-  .replace(/^[\s\S]*?(?=<svg)/i, ""); 
 ---
 
 <section class="flex flex-col md:flex-row items-center md:items-center justify-between gap-8 lg:gap-16 mt-6 md:mt-12 pb-12 md:pb-0 scroll-mt-[22vh]">
@@ -28,7 +22,7 @@ const heroSvg = fs.readFileSync(path.resolve('./public/hero-illustration.svg'), 
       ¡Hola! Soy <span class="font-semibold text-accent-brown">Lucas</span>
     </p>
 
-    <h1 class="text-[clamp(2.2rem,7vw,2.75rem)] leading-[120%] md:leading-[130%] tracking-normal md:tracking-wider font-normal max-w-[800px] text-balance">
+    <h1 data-split class="text-[clamp(2.2rem,7vw,2.75rem)] leading-[120%] md:leading-[130%] tracking-normal md:tracking-wider font-normal max-w-[800px] text-balance">
       <span class="font-semibold text-accent-brown">{title}</span><br />
       {subtitle}
     </h1>
@@ -51,8 +45,8 @@ const heroSvg = fs.readFileSync(path.resolve('./public/hero-illustration.svg'), 
   </div>
 
   <!-- Imagen: En mobile queda entre el texto y el botón móvil -->
-  <div class="shrink-0 flex justify-center md:justify-end hero-animate-3 draw-in w-full md:w-auto -mt-2 md:mt-0">
-    <div class="w-64 md:w-80 lg:w-[420px] svg-container" set:html={heroSvg} />
+  <div class="shrink-0 flex justify-center md:justify-end hero-animate-3 w-full md:w-auto -mt-2 md:mt-0">
+    <div class="w-64 md:w-80 lg:w-[420px]"><HeroScene class="w-full h-auto block overflow-visible" /></div>
   </div>
 
   <!-- Botón Mobile: aparece debajo de la imagen -->
@@ -75,10 +69,3 @@ const heroSvg = fs.readFileSync(path.resolve('./public/hero-illustration.svg'), 
 
 </section>
 
-<style is:global>
-  .svg-container svg {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
-</style>

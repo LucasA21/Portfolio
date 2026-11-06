@@ -68,9 +68,12 @@ html, body {
     animation: nudge-down 0.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
-.fade-up, .fade-up-bottom {
+/* Hidden start states apply only when JS runs (html.js-motion), so content never stays invisible. */
+.js-motion .fade-up, .js-motion .fade-up-bottom {
     opacity: 0;
-    transform: translateY(20px) scale(0.99); 
+    transform: translateY(20px) scale(0.99);
+}
+.fade-up, .fade-up-bottom {
     transition: opacity 1s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -78,7 +81,7 @@ html, body {
     transition: opacity 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 150ms, transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) 150ms;
 }
 
-.fade-up.is-visible, .fade-up-bottom.is-visible {
+.js-motion .fade-up.is-visible, .js-motion .fade-up-bottom.is-visible {
     opacity: 1;
     transform: translateY(0) scale(1);
 }
@@ -111,18 +114,12 @@ a:not([class]) {
 }
 .skip-link:focus { top: 1rem; }
 
-/* Authored moment: line illustrations get drawn in once, then idle. */
-@keyframes draw-in {
-    from { clip-path: inset(0 100% 0 0); }
-    to { clip-path: inset(0 0 0 0); }
-}
-@keyframes idle-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-}
-.draw-in svg {
-    animation: draw-in 1.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both,
-               idle-float 7s ease-in-out 2s infinite;
+/* The hero art waits for the motion script (it draws itself in); if the script never runs, it shows after 2.5 s. */
+@keyframes ink-fallback { to { visibility: visible; } }
+.js-motion [data-scene="hero"]:not([data-ready]) [data-ink],
+.js-motion [data-scene="hero"]:not([data-ready]) [data-part="code"] {
+    visibility: hidden;
+    animation: ink-fallback 0s 2.5s forwards;
 }
 
 /* Waves drift slowly with scroll where supported */
@@ -138,13 +135,13 @@ a:not([class]) {
 }
 
 /* Self-drawing linework (about scene) */
-.line-draw path, .line-draw circle, .line-draw rect {
+.js-motion .line-draw path, .js-motion .line-draw circle, .js-motion .line-draw rect {
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
     transition: stroke-dashoffset 1.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.is-visible .line-draw path, .is-visible .line-draw circle, .is-visible .line-draw rect,
-.line-draw.is-visible path, .line-draw.is-visible circle, .line-draw.is-visible rect {
+.js-motion .is-visible .line-draw path, .js-motion .is-visible .line-draw circle, .js-motion .is-visible .line-draw rect,
+.js-motion .line-draw.is-visible path, .js-motion .line-draw.is-visible circle, .js-motion .line-draw.is-visible rect {
     stroke-dashoffset: 0;
 }
 @keyframes twinkle {
@@ -162,8 +159,8 @@ a:not([class]) {
 .twinkle { transform-box: fill-box; transform-origin: center; animation: twinkle 2.8s ease-in-out infinite; }
 .sway { animation: sway 3.2s ease-in-out infinite; }
 .nudge { animation: nudge 3.6s ease-in-out infinite; }
-.icon-ink { opacity: 0; transition: opacity 0.8s ease-out 0.9s; }
-.is-visible .icon-ink { opacity: 1; }
+.js-motion .icon-ink { opacity: 0; transition: opacity 0.8s ease-out 0.9s; }
+.js-motion .is-visible .icon-ink { opacity: 1; }
 @keyframes steam {
     0% { opacity: 0; transform: translateY(6px); }
     40% { opacity: 0.9; }
@@ -172,15 +169,15 @@ a:not([class]) {
 .steam { animation: steam 3.2s ease-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-    .icon-ink { opacity: 1; }
+    .js-motion .icon-ink { opacity: 1; }
     html { scroll-behavior: auto; }
     *, *::before, *::after {
         animation: none !important;
         transition-duration: 0.01ms !important;
         transition-delay: 0ms !important;
     }
-    .fade-up, .fade-up-bottom { opacity: 1; transform: none; }
-    .line-draw path, .line-draw circle, .line-draw rect { stroke-dashoffset: 0; }
+    .js-motion .fade-up, .js-motion .fade-up-bottom { opacity: 1; transform: none; }
+    .js-motion .line-draw path, .js-motion .line-draw circle, .js-motion .line-draw rect { stroke-dashoffset: 0; }
 }
 
 /* Scrollbar styles remain in global.css */

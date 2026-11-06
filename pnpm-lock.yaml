@@ -59,6 +59,9 @@ importers:
       astro-icon:
         specifier: ^1.1.5
         version: 1.1.5(supports-color@8.1.1)
+      gsap:
+        specifier: 3.15.1
+        version: 3.15.1
       lodash:
         specifier: ^4.18.1
         version: 4.18.1
@@ -102,6 +105,9 @@ importers:
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
+      playwright-core:
+        specifier: ^1.64.1
+        version: 1.64.1
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -3689,6 +3695,9 @@ packages:
     resolution: {integrity: sha512-mADJIWgW9z5Alg1n2hL6nPIyo8HqbOiBTJ9Mz34JD3VCNLpQX0k8pXPV0cEJF6ep9aV2rGk+j5+h3HoIq14ruA==}
     engines: {node: '>=20.19 <22 || >=22.12'}
 
+  gsap@3.15.1:
+    resolution: {integrity: sha512-63yjWRFWj3QRP1UOuD8kcidCcy3nxb1mMRpwHr/xJRvPfm9GtWOXFAYUiL0ro1fgPq2nY53LR+98pAgy9BumBg==}
+
   gunzip-maybe@1.4.2:
     resolution: {integrity: sha512-4haO1M4mLO91PW57BMsDFf75UmwoRX0GkdD+Faw+Lr+r/OZrOCS0pIBwOL1xCKQqnQzbNFGgK2V2CpBUPeFNTw==}
     hasBin: true
@@ -4793,6 +4802,11 @@ packages:
 
   player.style@0.3.4:
     resolution: {integrity: sha512-5O9bkbq0APQIkhptyZwp0gUgheCeImGPFo4hvPF2M5xBmgsUYzsUPHCfMye2xyeRE1zvQBKtziaC3jPgnHE1tw==}
+
+  playwright-core@1.64.1:
+    resolution: {integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   pluralize-esm@9.0.5:
     resolution: {integrity: sha512-Kb2dcpMsIutFw2hYrN0EhsAXOUJTd6FVMIxvNAkZCMQLVt9NGZqQczvGpYDxNWCZeCWLHUPxQIBudWzt1h7VVA==}
@@ -10189,6 +10203,8 @@ snapshots:
 
   groq@5.22.0: {}
 
+  gsap@3.15.1: {}
+
   gunzip-maybe@1.4.2:
     dependencies:
       browserify-zlib: 0.1.4
@@ -11490,6 +11506,8 @@ snapshots:
       media-chrome: 4.19.0(react@19.2.5)
     transitivePeerDependencies:
       - react
+
+  playwright-core@1.64.1: {}
 
   pluralize-esm@9.0.5: {}
 

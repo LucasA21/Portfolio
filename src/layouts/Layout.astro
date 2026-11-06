@@ -30,6 +30,7 @@ const socialImageURL = new URL("/og-image.png", "https://lucasaraya.com.ar");
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <script is:inline>document.documentElement.classList.add("js-motion");</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Preload Critical Fonts -->
@@ -100,40 +101,11 @@ const socialImageURL = new URL("/og-image.png", "https://lucasaraya.com.ar");
   </head>
   <body>
     <a href="#projects" class="skip-link">Saltar al contenido</a>
-    <main class="w-full overflow-hidden">
+    <main class="w-full overflow-hidden relative">
       <slot />
     </main>
     <script>
-      const observerOptions = {
-        rootMargin: "0px 0px -25% 0px", 
-        threshold: 0.1
-      };
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
-            observer.unobserve(entry.target);
-          }
-        });
-      }, observerOptions);
-      
-      const observerBottom = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("is-visible");
-            observerBottom.unobserve(entry.target);
-          }
-        });
-      }, { rootMargin: "0px", threshold: 0.1 });
-
-      function startAnimations() {
-        document.querySelectorAll(".fade-up").forEach((el) => observer.observe(el));
-        document.querySelectorAll(".fade-up-bottom").forEach((el) => observerBottom.observe(el));
-      }
-
-      startAnimations();
-      document.addEventListener('astro:after-swap', startAnimations);
+      import "../scripts/motion/index";
     </script>
     <Analytics />
     <SpeedInsights />
