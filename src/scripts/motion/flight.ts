@@ -18,8 +18,12 @@ const PIN_SCALE = 0.6;
 const FRAMES = ['unfold-1', 'unfold-2', 'sheet', 'fold-1', 'fold-2'];
 
 let launchFn: (() => void) | null = null;
-/** The plane takes off from the laptop as soon as the hero finishes drawing. */
-export const launch = () => launchFn?.();
+let launched = false;
+/** The plane takes off from Lucas's hand at the second release of the hero throw. */
+export const launch = () => {
+  launched = true;
+  launchFn?.();
+};
 
 const dstr = (pts: P[]) => 'M' + pts.map((p) => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join('L');
 const plen = (pts: P[]) => pts.slice(1).reduce((n, p, i) => n + Math.hypot(p[0] - pts[i][0], p[1] - pts[i][1]), 0);
@@ -325,7 +329,7 @@ export function initFlight({ reduce }: MotionContext) {
     }
   };
 
-  // ---- Takeoff from the laptop (flash, then fly the hero stretch) ----
+  // ---- Takeoff from the hand (flash, then fly the hero stretch) ----
   const takeoff = () => {
     const hero = routes.a.getPointAtLength(0);
     gsap.set(flash, { x: hero.x, y: hero.y, transformOrigin: '0 0' });
@@ -346,7 +350,7 @@ export function initFlight({ reduce }: MotionContext) {
       }, 0.3);
   };
   launchFn = () => takeoff();
-  if (document.querySelector('[data-scene="hero"][data-intro="done"]')) takeoff();
+  if (launched) takeoff(); // the scene was rebuilt (resize) after the throw
 
   // ---- Delivery: the plane unfolds into a sheet and refolds as the envelope (the envelope itself is contact.ts) ----
   const envScale = () => mail.w / 100; // the envelope fills 100 of the 124 drawing units

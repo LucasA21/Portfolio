@@ -3,6 +3,8 @@
 import Layout from '../layouts/Layout.astro';
 import Doodle from '../components/Doodle.astro';
 import HeroScene from '../components/scenes/HeroScene.astro';
+import HeroFrames from '../components/scenes/HeroFrames.astro';
+import framesRaw from '../components/scenes/hero-frames.svg?raw';
 import ContactScene from '../components/scenes/ContactScene.astro';
 import AboutScene from '../components/scenes/AboutScene.astro';
 import { ICON_OPTIONS } from '../utils/icons';
@@ -39,11 +41,44 @@ const POSES = ['typing', 'throw-windup', 'throw-release'] as const;
 const zoom = (svg: string, vb: string) => svg.replace(/viewBox="[^"]*"/, `viewBox="${vb}"`);
 const headBox = '250 90 260 200'; // head and hair, shown at about 300 %
 const handBox = '120 330 280 220'; // hand on the keyboard
+// Hero by frames: every drawing on its own, cropped around its piece.
+const CROPS: Record<string, string> = { base: '270 280 2560 2520', 'arm-l': '450 1000 750 700', 'arm-r': '1100 430 1100 850', 'plane-in-hand': '1300 290 700 280', head: '740 300 640 800', eyes: '980 560 330 130' };
+const heroFrames = [...framesRaw.matchAll(/<g data-piece="([^"]+)">([\s\S]*?)<\/g>\n/g)].flatMap(([, piece, body]) =>
+  body.split('<g data-frame="').slice(1).map((c) => ({
+    piece, name: c.slice(0, c.indexOf('"')),
+    svg: `<svg viewBox="${CROPS[piece]}" class="w-full h-auto" fill="none"><g data-frame="${c.replace(' visibility="hidden"', '')}</svg>`,
+  })));
 const inkD = (svg: string) => svg.match(/fill="#531F1F" d="([^"]*)"/)?.[1] ?? '';
 ---
 
 <Layout title="Dibujos">
   <div class="max-w-6xl mx-auto px-6 py-12 flex flex-col gap-16">
+    <section data-review="Hero por fotogramas">
+      <h2 class="text-2xl text-accent-brown mb-2">Hero por fotogramas: dibujos de Krita</h2>
+      <p class="mb-6 text-sm">Izquierda, el hero actual; derecha, los 12 PNG vectorizados (<code>scripts/illustrations/hero-frames/trace.mjs</code>) con el grosor del trazo original y las formas cerradas rellenas con el color de fondo. Mismo tamaño. Los botones corren la animación a 10 fotogramas por segundo.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6" data-frames-demo>
+        <figure><img src="/hero-illustration.svg" alt="Hero actual" class="w-full" /><figcaption class="text-xs">Actual</figcaption></figure>
+        <figure>
+          <HeroFrames scene="hero-demo" class="w-full h-auto block overflow-visible" />
+          <figcaption class="text-xs">Fotogramas</figcaption>
+        </figure>
+      </div>
+      <div class="flex flex-wrap gap-3 mb-10 text-sm">
+        <button type="button" data-hf="idle" class="px-4 py-2 rounded-full border border-accent-brown/40 text-accent-brown">Idle: tipea y parpadea</button>
+        <button type="button" data-hf="throw" class="px-4 py-2 rounded-full border border-accent-brown/40 text-accent-brown">Lanzamiento</button>
+        <button type="button" data-hf="rest" class="px-4 py-2 rounded-full border border-accent-brown/40 text-accent-brown">Reposo (reduced motion)</button>
+        <span data-hf="status" class="self-center text-xs opacity-70"></span>
+      </div>
+      <h3 class="text-xl text-accent-brown mb-3">Ampliado 300 %: cabeza</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+        <figure><div class="w-full" set:html={zoom(heroRaw.replace(/width="[^"]*"\s*height="[^"]*"/, ''), headBox)} /><figcaption class="text-xs">Actual</figcaption></figure>
+        <figure><HeroFrames scene="hero-zoom" box="790 300 560 440" class="w-full h-auto block" /><figcaption class="text-xs">Krita vectorizado</figcaption></figure>
+      </div>
+      <h3 class="text-xl text-accent-brown mb-3">Todos los fotogramas</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" data-hf-gallery>
+        {heroFrames.map((f) => <figure class="bg-main-bg border border-accent-brown/15 rounded p-2"><div set:html={f.svg} /><figcaption class="text-xs mt-1">{f.piece} / {f.name}</figcaption></figure>)}
+      </div>
+    </section>
     <section data-review="Personaje piloto">
       <h2 class="text-2xl text-accent-brown mb-2">Personaje por capas: piloto del hero</h2>
       <p class="mb-6 text-sm">Izquierda, el hero actual; derecha, el rig por capas (<code>scripts/illustrations/character/</code>) en las tres poses: usa el trazo exacto del original, recortado en piezas articuladas, y solo dibuja lo que el original no tenía. Mismo tamaño. Abajo, la cabeza y la mano ampliadas al 300 % para comparar el trazo.</p>
@@ -148,6 +183,22 @@ const inkD = (svg: string) => svg.match(/fill="#531F1F" d="([^"]*)"/)?.[1] ?? ''
 </style>
 
 <script>
+  import { createHeroRig } from '../scripts/motion/hero-frames';
+  const demo = document.querySelector<SVGSVGElement>('[data-scene="hero-demo"]');
+  if (demo) {
+    const rig = createHeroRig(demo);
+    rig.rest();
+    const typing = rig.typing(), blink = rig.blink();
+    let throwing: gsap.core.Timeline | null = null;
+    const status = document.querySelector<HTMLElement>('[data-hf="status"]')!;
+    const stop = () => { typing.pause(); blink.pause(); throwing?.kill(); throwing = null; rig.rest(); status.textContent = ''; };
+    document.querySelector('[data-hf="idle"]')!.addEventListener('click', () => { stop(); typing.play(); blink.play(); });
+    document.querySelector('[data-hf="rest"]')!.addEventListener('click', stop);
+    document.querySelector('[data-hf="throw"]')!.addEventListener('click', () => {
+      stop();
+      throwing = rig.throwIt(() => (status.textContent = 'avión suelto (aquí arranca flight.ts)'), () => { status.textContent = ''; typing.play(); blink.play(); });
+    });
+  }
   import { gsap } from 'gsap';
   import { MorphSVGPlugin } from 'gsap/MorphSVGPlugin';
   gsap.registerPlugin(MorphSVGPlugin);

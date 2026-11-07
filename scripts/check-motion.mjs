@@ -68,29 +68,103 @@ await test('reduced-motion', async () => {
   await p.close();
 });
 
-await test('hero-intro', async () => {
-  const p = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await p.goto(URL, { waitUntil: 'domcontentloaded' });
-  await p.waitForSelector('[data-scene="hero"][data-ready]');
-  await sleep(250);
-  const partial = await p.evaluate(() => [...document.querySelectorAll('[data-scene="hero"] mask [data-reveal]')]
-    .some((m) => { const d = getComputedStyle(m).strokeDasharray; return d !== 'none' && parseFloat(d) < m.getTotalLength() * 0.9; }));
-  assert(partial, 'hero strokes were not drawing in');
-  await p.waitForSelector('[data-scene="hero"][data-intro="done"]', { timeout: 2500 });
+// Hero by frames: which drawing of each piece is visible right now.
+const heroFrames = (p) => p.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-scene="hero"] [data-piece]')].map((g) => [
+  g.dataset.piece, [...g.querySelectorAll(':scope > [data-frame]')].filter((f) => f.getAttribute('visibility') !== 'hidden').map((f) => f.dataset.frame),
+])));
+const REST_POSE = { base: ['base'], 'base-patch': [], 'arm-r': [], 'plane-in-hand': [], 'arm-l': ['typing'], head: ['front'], eyes: ['open'] };
+const sameFrames = (a, b) => JSON.stringify(Object.keys(b).map((k) => a[k]?.slice().sort())) === JSON.stringify(Object.keys(b).map((k) => b[k]));
+
+await test('hero-fotogramas', async () => {
+  const p = await page();
+  const f = await heroFrames(p);
+  assert(Object.values(f).every((v) => v.length <= 1), `more than one frame visible in a piece: ${JSON.stringify(f)}`);
+  assert(f['arm-r'].length === 0 && f['plane-in-hand'].length === 0, 'right arm visible at rest');
   await p.close();
 });
 
-await test('hero-loop', async () => {
+await test('hero-tipeo', async () => {
   const p = await page();
-  await p.waitForSelector('[data-scene="hero"][data-motion="running"]', { timeout: 4000 });
-  let blinked = false;
-  for (let t = 0; t < 7000 && !blinked; t += 40) {
-    blinked = await p.evaluate(() => /scale|matrix\(1,? ?0,? ?0,? ?0\.[0-8]/.test(
-      (document.querySelector('[data-scene="hero"] [data-part="eyeL"]').getAttribute('transform') ?? '') +
-      getComputedStyle(document.querySelector('[data-scene="hero"] [data-part="eyeL"]')).transform));
-    await sleep(40);
+  let changes = 0, last = '';
+  for (let t = 0; t < 2000; t += 50) {
+    const cur = (await heroFrames(p))['arm-l'][0];
+    if (cur !== last) changes++;
+    last = cur;
+    await sleep(50);
   }
-  assert(blinked, 'eyes did not blink within 7 s');
+  assert(changes >= 4 && changes <= 26, `left arm changed frame ${changes} times in 2 s`);
+  await p.close();
+});
+
+await test('hero-parpadeo', async () => {
+  const p = await page();
+  const closed = [];
+  const t0 = Date.now();
+  let was = false;
+  while (Date.now() - t0 < 14000) {
+    const now = (await heroFrames(p)).eyes[0] === 'closed';
+    if (now && !was) closed.push(Date.now() - t0);
+    was = now;
+    await sleep(30);
+  }
+  const gaps = closed.slice(1).map((t, i) => t - closed[i]);
+  assert(closed.length >= 2 && gaps.every((g) => g > 2700 && g < 6500), `blink gaps (ms): ${gaps}`);
+  await p.close();
+});
+
+await test('hero-sin-avion-en-reposo', async () => {
+  const p = await page();
+  await sleep(1500);
+  assert(Number(await p.evaluate(() => document.querySelector('[data-plane]').style.opacity || 0)) === 0, 'plane visible before the throw');
+  assert(await p.getAttribute('[data-scene="hero"]', 'data-throw') === null, 'throw started without scroll');
+  await p.close();
+});
+
+await test('hero-lanzamiento', async () => {
+  const p = await page();
+  await p.mouse.wheel(0, 40);
+  const seen = [];
+  for (let t = 0; t < 2600; t += 50) {
+    const f = await heroFrames(p);
+    const key = `${f['arm-r'][0] ?? '-'}|${f['plane-in-hand'][0] ?? '-'}|${f.head[0]}|${f['arm-l'][0]}`;
+    if (!seen.length || seen.at(-1).split('|').slice(0, 3).join() !== key.split('|').slice(0, 3).join()) seen.push(key);
+    await sleep(50);
+  }
+  const arm = seen.map((k) => k.split('|')[0]);
+  assert(JSON.stringify(arm) === JSON.stringify(['windup', 'release', '-']) || JSON.stringify(arm.filter((a, i) => a !== arm[i - 1])) === JSON.stringify(['-', 'windup', 'release', '-']),
+    `arm sequence: ${arm}`);
+  assert(seen.some((k) => k.startsWith('windup|windup')), 'plane not in hand during the windup');
+  assert(seen.every((k) => !k.startsWith('release|windup')), 'plane still in hand after the release');
+  assert(seen.some((k) => k.split('|')[2] === 'look-up') && seen.at(-1).split('|')[2] === 'front', 'head did not look up and come back');
+  assert(await p.evaluate(() => getComputedStyle(document.querySelector('[data-plane]')).opacity) !== '0', 'plane did not take off');
+  const typingWhile = seen.filter((k) => k.split('|')[0] !== '-' ).length;
+  assert(typingWhile > 0, 'no throw frames');
+  await p.close();
+});
+
+await test('hero-despega-de-la-mano', async () => {
+  const p = await page();
+  await p.mouse.wheel(0, 40);
+  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'running' && +document.querySelector('[data-plane]').style.opacity > 0.5, null, { timeout: 4000 });
+  const d = await p.evaluate(() => {
+    const g = document.querySelector('[data-plane]').getBoundingClientRect();
+    const hand = document.querySelector('[data-scene="hero"] [data-piece="arm-r"] [data-frame="release"]').getBoundingClientRect();
+    return { px: g.x + g.width / 2, py: g.y + g.height / 2, hx: hand.right, hy: hand.top };
+  });
+  assert(Math.hypot(d.px - d.hx, d.py - d.hy) < 140, `plane starts ${Math.round(Math.hypot(d.px - d.hx, d.py - d.hy))} px from the hand`);
+  await p.close();
+});
+
+await test('hero-una-vez', async () => {
+  const p = await page();
+  await p.mouse.wheel(0, 40);
+  await sleep(2800);
+  await p.evaluate(() => scrollTo(0, 0));
+  await sleep(300);
+  await p.mouse.wheel(0, 40);
+  await sleep(300);
+  const f = await heroFrames(p);
+  assert(f['arm-r'].length === 0, 'second throw started');
   await p.close();
 });
 
@@ -98,6 +172,26 @@ await test('hero-pausa', async () => {
   const p = await page();
   await scrollTo(p, 'max');
   assert(await p.getAttribute('[data-scene="hero"]', 'data-motion') === 'paused', 'hero loop still running off screen');
+  await p.close();
+});
+
+await test('hero-reduced', async () => {
+  const p = await page({ reducedMotion: 'reduce' });
+  const a = await heroFrames(p);
+  await sleep(3000);
+  await p.mouse.wheel(0, 40);
+  await sleep(500);
+  const b = await heroFrames(p);
+  assert(JSON.stringify(a) === JSON.stringify(b), 'frames changed under reduced motion');
+  assert(sameFrames(b, REST_POSE), `not the rest pose: ${JSON.stringify(b)}`);
+  await p.close();
+});
+
+for (const w of [390, 820]) await test(`hero-mobile-${w}`, async () => {
+  const p = await page({ viewport: { width: w, height: 800 } });
+  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'done', null, { timeout: 8000 });
+  const f = await heroFrames(p);
+  assert(sameFrames(f, { ...REST_POSE, 'arm-l': f['arm-l'] }) , `did not return to rest: ${JSON.stringify(f)}`);
   await p.close();
 });
 
@@ -109,7 +203,8 @@ const atFrac = async (p, f) => { await p.evaluate((f) => scrollTo(0, (document.d
 
 await test('vuelo-progreso', async () => {
   const p = await page();
-  await sleep(2500); // takeoff from the laptop
+  await p.mouse.wheel(0, 40);
+  await sleep(3200); // the throw starts with the first scroll; the plane leaves the hand
   const ys = [];
   for (const f of [0, 0.3, 0.6, 1]) { await atFrac(p, f); ys.push((await plane(p)).y); }
   assert(ys.every((y, i) => i === 0 || y >= ys[i - 1] - 1), `plane does not advance with the scroll: ${ys}`);
@@ -218,7 +313,8 @@ for (const w of [1440, 1920]) await test(`ruta-sin-verticales-${w}`, async () =>
 
 await test('avion-tamano', async () => {
   const p = await page();
-  await sleep(2500);
+  await p.mouse.wheel(0, 40);
+  await sleep(3200);
   const wpx = await p.evaluate(() => document.querySelector('[data-plane] [data-frame="plane"]').getBoundingClientRect().width);
   assert(wpx >= 56 && wpx <= 90, `plane is ${Math.round(wpx)}px wide`);
   await p.close();
