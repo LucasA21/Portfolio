@@ -61,7 +61,7 @@ await test('reduced-motion', async () => {
     running: document.querySelectorAll('[data-motion="running"]').length,
     cssLoops: document.getAnimations().filter((a) => a.effect?.getTiming().iterations === Infinity && a.playState === 'running').length,
   }));
-  assert(r.plane.frame === 'pinned' && r.plane.opacity === '1', `plane not pinned to the board: ${JSON.stringify(r.plane)}`);
+  assert(r.plane.opacity === '0', `plane visible under reduced motion: ${JSON.stringify(r.plane)}`);
   assert(!/rotate\(9|matrix\(0/.test(r.flag), `flag not up: ${r.flag}`);
   assert(r.delivered === 'true', 'envelope not delivered');
   assert(r.running === 0 && r.cssLoops === 0, `loops running: ${r.running} gsap scenes, ${r.cssLoops} css`);
@@ -145,7 +145,7 @@ await test('hero-lanzamiento', async () => {
 await test('hero-despega-de-la-mano', async () => {
   const p = await page();
   await p.mouse.wheel(0, 40);
-  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'running' && +document.querySelector('[data-plane]').style.opacity > 0.5, null, { timeout: 4000 });
+  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'throwing' && +document.querySelector('[data-plane]').style.opacity > 0.5, null, { timeout: 4000 });
   const d = await p.evaluate(() => {
     const g = document.querySelector('[data-plane]').getBoundingClientRect();
     const hand = document.querySelector('[data-scene="hero"] [data-piece="arm-r"] [data-frame="release"]').getBoundingClientRect();
@@ -155,16 +155,35 @@ await test('hero-despega-de-la-mano', async () => {
   await p.close();
 });
 
-await test('hero-una-vez', async () => {
+await test('hero-vuelve-a-agarrar', async () => {
   const p = await page();
   await p.mouse.wheel(0, 40);
-  await sleep(2800);
+  await sleep(3000);
   await p.evaluate(() => scrollTo(0, 0));
-  await sleep(300);
+  // The plane flies back (about 1.1 s) and the hand catches it: windup with the plane, typing paused.
+  let held = false;
+  for (let t = 0; t < 3000 && !held; t += 100) {
+    const f = await heroFrames(p);
+    held = f['arm-r'][0] === 'windup' && f['plane-in-hand'][0] === 'windup';
+    await sleep(100);
+  }
+  assert(held, 'hand did not catch the plane after scrolling back up');
+  assert(await p.getAttribute('[data-scene="hero"]', 'data-throw') === 'held', 'not in the held state');
+  const a = (await heroFrames(p))['arm-l'][0];
+  await sleep(600);
+  assert((await heroFrames(p))['arm-l'][0] === a, 'typing while the arm is raised');
+  assert(Number(await p.evaluate(() => document.querySelector('[data-plane]').style.opacity)) === 0, 'flying plane visible while held');
+  // Scroll down again: the same throw repeats.
   await p.mouse.wheel(0, 40);
-  await sleep(300);
-  const f = await heroFrames(p);
-  assert(f['arm-r'].length === 0, 'second throw started');
+  let released = false, flying = false;
+  for (let t = 0; t < 3000 && !(released && flying); t += 100) {
+    released ||= (await heroFrames(p))['arm-r'][0] === 'release';
+    flying ||= Number(await p.evaluate(() => document.querySelector('[data-plane]').style.opacity)) > 0.5;
+    await sleep(100);
+  }
+  assert(released && flying, `second throw: released=${released} flying=${flying}`);
+  await sleep(1800);
+  assert((await heroFrames(p))['arm-r'].length === 0, 'arm did not go back down');
   await p.close();
 });
 
@@ -189,7 +208,7 @@ await test('hero-reduced', async () => {
 
 for (const w of [390, 820]) await test(`hero-mobile-${w}`, async () => {
   const p = await page({ viewport: { width: w, height: 800 } });
-  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'done', null, { timeout: 8000 });
+  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'away', null, { timeout: 8000 });
   const f = await heroFrames(p);
   assert(sameFrames(f, { ...REST_POSE, 'arm-l': f['arm-l'] }) , `did not return to rest: ${JSON.stringify(f)}`);
   await p.close();
@@ -320,18 +339,16 @@ await test('avion-tamano', async () => {
   await p.close();
 });
 
-await test('avion-pinchado', async () => {
+await test('avion-sin-pin', async () => {
   const p = await page();
-  await sleep(2500);
-  let r = null;
+  await p.mouse.wheel(0, 40);
+  await sleep(3200);
   const top = await p.evaluate(() => document.getElementById('about').getBoundingClientRect().top + scrollY - 500);
-  for (let y = top; y < top + 1000 && r?.phase !== 'pinned'; y += 50) {
-    await p.evaluate((y) => scrollTo(0, y), y); await sleep(900);
-    r = await plane(p);
+  for (let y = top; y < top + 1400; y += 100) {
+    await p.evaluate((y) => scrollTo(0, y), y); await sleep(500);
+    const r = await plane(p);
+    assert(r.phase !== 'pinned', `plane stopped on the board at ${y}`);
   }
-  assert(r.phase === 'pinned', `plane never pinned on the board: ${JSON.stringify(r)}`);
-  await p.evaluate(() => scrollTo(0, 0)); await sleep(1800);
-  assert((await plane(p)).phase !== 'pinned', 'plane stayed pinned after scrolling back up');
   await p.close();
 });
 
@@ -383,13 +400,28 @@ await test('about-boceto', async () => {
   const sketch = '[data-scene="about"] mask [data-content]';
   await scrollTo(p, 400);
   assert(await drawn(p, sketch) < 0.05, 'sketch drawn too early');
-  await scrollTo(p, 'max');
+  await scrollTo(p, 'max'); await sleep(3000); // the board writes itself once it enters the view
   assert(await drawn(p, `${sketch}:last-of-type`) > 0.98, 'sketch not complete after Sobre mí');
   await p.close();
   const m = await page({ viewport: { width: 390, height: 844 }, isMobile: true });
   await m.evaluate(() => document.querySelector('[data-scene="about"]').scrollIntoView({ block: 'center' })); await sleep(5000);
   assert(await drawn(m, `${sketch}:last-of-type`) > 0.98, 'mobile sketch not complete');
   await m.close();
+});
+
+await test('about-boceto-repite', async () => {
+  const p = await page();
+  const sketch = '[data-scene="about"] mask [data-content]:last-of-type';
+  await scrollTo(p, 'max'); await sleep(3500);
+  assert(await drawn(p, sketch) > 0.98, 'sketch not drawn the first time');
+  // Back to the top and down again: the board is written again from the start.
+  await scrollTo(p, 0);
+  await p.evaluate(() => document.querySelector('[data-scene="about"]').scrollIntoView({ block: 'center' }));
+  await sleep(600);
+  assert(await drawn(p, sketch) < 0.9, 'sketch did not restart when coming back');
+  await sleep(3500);
+  assert(await drawn(p, sketch) > 0.98, 'sketch not complete after the replay');
+  await p.close();
 });
 
 await test('about-base-visible', async () => {

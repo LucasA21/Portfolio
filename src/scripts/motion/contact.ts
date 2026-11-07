@@ -14,7 +14,6 @@ export function initContact({ reduce }: MotionContext) {
   deliver = null;
   if (!scene) return;
   const envelope = $(scene, '[data-envelope]')!;
-  const lid = pivot($(scene, '[data-part="slotLid"]'));
   if (reduce) {
     envelope.style.display = 'none'; // already inside the mailbox
     scene.setAttribute('data-delivered', 'true');
@@ -29,16 +28,15 @@ export function initContact({ reduce }: MotionContext) {
   const flag = pivot($(scene, '[data-flag]'));
   if (flag) gsap.set(flag, { rotation: 90 }); // lowered until the mail arrives
 
-  // Delivery: paper fills in, the envelope slips into the slot, the lid flaps shut, he nods.
+  // Delivery: the envelope slips into the slot, the flag goes up, he nods. The slot lid never moves: it is a clipped
+  // copy of the drawing, so rotating it would leave a blank hole where it was.
   const origin = (envelope as SVGElement).dataset.origin!;
   const post = gsap.timeline({ paused: true, onComplete: () => scene.setAttribute('data-delivered', 'true'), onReverseComplete: () => scene.setAttribute('data-delivered', 'false') });
   post
     .set(envelope, { opacity: 1 })
-    .to(lid, { rotation: -22, duration: 0.25, ease: 'power2.out' }, '+=0.05')
-    .to(envelope, { y: +(envelope as SVGElement).dataset.slide!, scaleY: 0.1, svgOrigin: origin, duration: 0.55, ease: 'power2.in' }, '<0.1')
-    .set(envelope, { opacity: 0 })
-    .to(lid, { rotation: 0, duration: 0.35, ease: 'back.out(2)' });
-  if (flag) post.to(flag, { rotation: 0, duration: 0.6, ease: 'back.out(3)' }, '-=0.1');
+    .to(envelope, { y: +(envelope as SVGElement).dataset.slide!, scaleY: 0.1, svgOrigin: origin, duration: 0.55, ease: 'power2.in' }, '+=0.1')
+    .set(envelope, { opacity: 0 });
+  if (flag) post.to(flag, { rotation: 0, duration: 0.6, ease: 'back.out(3)' }, '+=0.05');
   const head = $(scene, '[data-part="head"]');
   if (head) post.to(head, { rotation: 2, svgOrigin: (head as SVGElement).dataset.origin, duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<');
   deliver = (on) => {

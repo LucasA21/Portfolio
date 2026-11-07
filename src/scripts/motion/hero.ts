@@ -2,10 +2,12 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { MotionContext } from './index';
 import { visibleScene, whileVisible } from './util';
-import { launch } from './flight';
+import { launch, recall } from './flight';
 import { createHeroRig } from './hero-frames';
 
-let thrown = false; // the throw happens once per page load
+// rest: plane not thrown yet | throwing | away: plane flying | recalling: plane flies back to the hand | held: plane in hand
+type State = 'rest' | 'throwing' | 'away' | 'recalling' | 'held';
+let state: State = 'rest';
 let offScroll: (() => void) | null = null;
 
 export function initHero({ reduce }: MotionContext) {
@@ -21,36 +23,51 @@ export function initHero({ reduce }: MotionContext) {
     scene.setAttribute('data-motion', 'paused');
     return;
   }
+  const wide = window.matchMedia('(min-width: 1024px)').matches;
+  if (state !== 'rest') state = wide ? 'away' : 'rest';
 
-  // Idle: left arm types, eyes blink. Both stop while the throw plays or the scene is off screen.
+  // Idle: left arm types, eyes blink. Typing only runs while the right arm is down.
   const typing = rig.typing();
   const blink = rig.blink();
-  let busy = false;
-  const idle = { pause: () => (typing.pause(), blink.pause()), resume: () => (blink.resume(), busy || typing.resume()) } as unknown as gsap.core.Animation;
+  const armDown = () => state === 'rest' || state === 'away';
+  const idle = { pause: () => (typing.pause(), blink.pause()), resume: () => (blink.resume(), armDown() && typing.resume()) } as unknown as gsap.core.Animation;
   whileVisible(scene, [idle]);
-
-  const go = () => {
-    if (thrown) return;
-    thrown = busy = true;
-    if (scene.getBoundingClientRect().bottom < 0) return launch(); // loaded scrolled down: skip the show
-    typing.pause();
-    scene.setAttribute('data-throw', 'running');
-    rig.throwIt(launch, () => {
-      busy = false;
-      scene.setAttribute('data-throw', 'done');
-      if (scene.getAttribute('data-motion') === 'running') typing.resume();
-    });
+  const set = (s: State) => {
+    state = s;
+    scene.setAttribute('data-throw', s);
+    if (armDown() && scene.getAttribute('data-motion') === 'running') typing.resume();
+    else typing.pause();
   };
-  if (thrown) return;
+  const thrown = () => (set('away'), wide && scrollY <= 8 && catchNow());
 
-  if (window.matchMedia('(min-width: 1024px)').matches) {
-    // From 1024 px the scroll starts the throw.
-    const onScroll = () => scrollY > 8 && go();
+  const throwNow = (held: boolean) => {
+    set('throwing');
+    rig.throwIt(launch, thrown, held);
+  };
+  // Back at the top the plane returns to the hand, the hand catches it and holds it until the next scroll down.
+  const catchNow = () => {
+    set('recalling');
+    rig.setLook(true);
+    recall(() => rig.catchIt(() => (set('held'), scrollY > 8 && throwNow(true))));
+  };
+
+  const onScroll = () => {
+    if (scrollY > 8) {
+      if (state === 'rest' && scene.getBoundingClientRect().bottom < 0) return launch(), set('away'); // loaded scrolled down
+      if (state === 'rest') {
+        typing.pause();
+        throwNow(false);
+      } else if (state === 'held') throwNow(true);
+    } else if (state === 'away') catchNow();
+  };
+
+  if (wide) {
+    // From 1024 px scrolling drives the throw; scrolling back to the top brings the plane back.
     addEventListener('scroll', onScroll, { passive: true });
     offScroll = () => removeEventListener('scroll', onScroll);
     onScroll();
-  } else {
-    // Below 1024 px the hero throws on its own once it is on screen.
-    ScrollTrigger.create({ trigger: scene, start: 'top 85%', once: true, onEnter: () => gsap.delayedCall(1.2, go) });
+  } else if (state === 'rest') {
+    // Below 1024 px the hero throws on its own, once, after it comes on screen.
+    ScrollTrigger.create({ trigger: scene, start: 'top 85%', once: true, onEnter: () => gsap.delayedCall(1.2, () => (typing.pause(), throwNow(false))) });
   }
 }

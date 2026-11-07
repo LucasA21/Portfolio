@@ -52,27 +52,48 @@ export function createHeroRig(svg: SVGSVGElement) {
 
   /**
    * The throw: the right arm rises with the plane in hand (windup), releases it, and goes back down to rest.
-   * Typing stays paused until `resume`. onRelease fires on the tick the plane leaves the hand.
+   * With `held` the arm is already raised (see catchIt), so it releases at once. Typing stays paused until `resume`.
+   * onRelease fires on the tick the plane leaves the hand.
    */
-  function throwIt(onRelease: () => void, resume: () => void) {
+  function throwIt(onRelease: () => void, resume: () => void, held = false) {
     const tl = gsap.timeline();
-    tl.call(() => {
-      show('arm-r', 'windup');
-      show('base-patch', 'windup');
-      show('plane-in-hand', 'windup');
-    }, [], 0);
+    const t = held ? 0 : 4 * TICK;
+    if (!held) {
+      tl.call(() => {
+        show('arm-r', 'windup');
+        show('base-patch', 'windup');
+        show('plane-in-hand', 'windup');
+      }, [], 0);
+    }
     tl.call(() => {
       show('arm-r', 'release');
       show('base-patch', '');
       show('plane-in-hand', '');
       setLook(true);
       onRelease();
-    }, [], 4 * TICK);
-    tl.call(() => show('arm-r', ''), [], 10 * TICK); // arm down: back to the rest drawing
-    tl.call(() => setLook(false), [], 4 * TICK + 1.4);
-    tl.call(resume, [], 4 * TICK + 1.5);
+    }, [], t);
+    tl.call(() => show('arm-r', ''), [], t + 6 * TICK); // arm down: back to the rest drawing
+    tl.call(() => setLook(false), [], t + 1.4);
+    tl.call(resume, [], t + 1.5);
     return tl;
   }
 
-  return { show, rest, typing, blink, throwIt, setLook };
+  /** The plane is back at the hand: the open hand appears, closes on it (windup with the plane) and holds. */
+  function catchIt(done: () => void) {
+    const tl = gsap.timeline();
+    tl.call(() => {
+      show('arm-r', 'release');
+      setLook(true);
+    }, [], 0);
+    tl.call(() => {
+      show('arm-r', 'windup');
+      show('base-patch', 'windup');
+      show('plane-in-hand', 'windup');
+      setLook(false);
+    }, [], 3 * TICK);
+    tl.call(done, [], 4 * TICK);
+    return tl;
+  }
+
+  return { show, rest, typing, blink, throwIt, catchIt, setLook };
 }
