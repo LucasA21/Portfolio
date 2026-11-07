@@ -1,0 +1,71 @@
+{
+ "viewBox": [
+  1015,
+  1009
+ ],
+ "pivots": {
+  "waist": [
+   338.3,
+   581.9
+  ],
+  "head": [
+   348.4,
+   338.3
+  ],
+  "shoulder-front": [
+   267.9,
+   356.9
+  ],
+  "elbow-front": [
+   203.0,
+   556.2
+  ],
+  "wrist-front": [
+   301.8,
+   556.2
+  ]
+ },
+ "limits": {
+  "waist": [
+   -12,
+   12
+  ],
+  "head": [
+   -25,
+   25
+  ],
+  "shoulder-front": [
+   -160,
+   160
+  ],
+  "elbow-front": [
+   -10,
+   170
+  ],
+  "wrist-front": [
+   -45,
+   45
+  ]
+ },
+ "hands": [
+  "type",
+  "grip",
+  "open"
+ ],
+ "poses": {
+  "typing": {},
+  "throw-windup": {
+   "waist": -4,
+   "shoulder-front": 50,
+   "wrist-front": 12,
+   "hand-front": "grip"
+  },
+  "throw-release": {
+   "waist": 4,
+   "shoulder-front": -80,
+   "wrist-front": -8,
+   "hand-front": "open"
+  }
+ },
+ "note": "Parts are clipped copies of public/hero-illustration.svg. \"waist\" appears twice (torso+head and front arm): rotate both with [data-joint=\"waist\"]. Back arm and eyes-closed come in phase 3."
+}

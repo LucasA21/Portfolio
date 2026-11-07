@@ -1,4 +1,5 @@
 import { sanityClient } from 'sanity:client';
+import shots from '../../public/screenshots/index.json';
 
 // ─── Queries GROQ ───
 
@@ -67,8 +68,15 @@ export async function getSettings(): Promise<SiteSettings | null> {
   return await sanityClient.fetch(SETTINGS_QUERY);
 }
 
+const slug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/** A screenshot uploaded in Sanity wins; otherwise the capture made by scripts/screenshots.mjs, if there is one. */
 export async function getProjects(): Promise<Project[]> {
-  return await sanityClient.fetch(PROJECTS_QUERY);
+  const projects: Project[] = await sanityClient.fetch(PROJECTS_QUERY);
+  return projects.map((p) => {
+    const local = (shots as Record<string, string>)[slug(p.title)];
+    return p.screenshot || !local ? p : { ...p, screenshot: local, screenshotAlt: `Captura del sitio ${p.title}` };
+  });
 }
 
 /**

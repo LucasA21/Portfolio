@@ -32,11 +32,33 @@ const crop = (raw: string, vb: string) =>
   raw.replace(/<svg([^>]*?)width="[^"]*"\s*height="[^"]*"\s*viewBox="[^"]*"/, `<svg$1 viewBox="${vb}"`);
 const heroCrop = crop(heroRaw, '330 400 320 240');
 const mailCrop = crop(contactRaw, '500 440 280 210');
+// Character pilot (phase 2 of plan-personaje-por-capas): generated rig poses next to the current hero.
+const charRaw = import.meta.glob('../components/character/hero-*.svg', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const pose = (name: string) => charRaw[`../components/character/hero-${name}.svg`] ?? '';
+const POSES = ['typing', 'throw-windup', 'throw-release'] as const;
+const zoom = (svg: string, vb: string) => svg.replace(/viewBox="[^"]*"/, `viewBox="${vb}"`);
+const headBox = '250 90 260 200'; // head and hair, shown at about 300 %
+const handBox = '120 330 280 220'; // hand on the keyboard
 const inkD = (svg: string) => svg.match(/fill="#531F1F" d="([^"]*)"/)?.[1] ?? '';
 ---
 
 <Layout title="Dibujos">
   <div class="max-w-6xl mx-auto px-6 py-12 flex flex-col gap-16">
+    <section data-review="Personaje piloto">
+      <h2 class="text-2xl text-accent-brown mb-2">Personaje por capas: piloto del hero</h2>
+      <p class="mb-6 text-sm">Izquierda, el hero actual; derecha, el rig por capas (<code>scripts/illustrations/character/</code>) en las tres poses: usa el trazo exacto del original, recortado en piezas articuladas, y solo dibuja lo que el original no tenía. Mismo tamaño. Abajo, la cabeza y la mano ampliadas al 300 % para comparar el trazo.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10" data-pilot="same-size">
+        <figure><img src="/hero-illustration.svg" alt="Hero actual" class="w-full" /><figcaption class="text-xs">Actual</figcaption></figure>
+        {POSES.map((n) => <figure><div class="w-full" set:html={pose(n)} /><figcaption class="text-xs">{n}</figcaption></figure>)}
+      </div>
+      <h3 class="text-xl text-accent-brown mb-3">Ampliado 300 %</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8" data-pilot="zoom">
+        <figure><div class="w-full" set:html={zoom(heroRaw.replace(/width="[^"]*"\s*height="[^"]*"/, ''), headBox)} /><figcaption class="text-xs">Actual: cabeza</figcaption></figure>
+        <figure><div class="w-full" set:html={zoom(pose('typing'), headBox)} /><figcaption class="text-xs">Piloto: cabeza</figcaption></figure>
+        <figure><div class="w-full" set:html={zoom(heroRaw.replace(/width="[^"]*"\s*height="[^"]*"/, ''), handBox)} /><figcaption class="text-xs">Actual: brazo y mano</figcaption></figure>
+        <figure><div class="w-full" set:html={zoom(pose('typing'), handBox)} /><figcaption class="text-xs">Piloto: brazo y mano</figcaption></figure>
+      </div>
+    </section>
     <section data-review="Avión de papel">
       <h2 class="text-2xl text-accent-brown mb-2">Avión de papel: 3 variantes</h2>
       <p class="mb-6 text-sm">Cada columna: tamaño real (52 px) y ampliado, el desdoble en 6 fotogramas y recortes de las escenas a escala parecida para comparar el trazo.</p>
@@ -116,6 +138,7 @@ const inkD = (svg: string) => svg.match(/fill="#531F1F" d="([^"]*)"/)?.[1] ?? ''
     </div>
   </div>
 </Layout>
+
 
 <style is:global>
   .plane-col div > svg:not(.morph-svg), .crop svg { width: 100%; height: auto; display: block; }
