@@ -30,7 +30,8 @@ export function initAbout({ reduce }: MotionContext) {
   strokes.forEach((s) => sketch!.to(s, { drawSVG: '100%', duration: s.getTotalLength() / total, ease: 'none' }));
   sketch.eventCallback('onComplete', () => hand && gsap.to(hand, { rotation: 0, x: 0, y: 0, duration: 0.4 }));
 
-  ScrollTrigger.create({ trigger: scene, start: 'top 85%', once: true, onEnter: () => intro.play() });
+  // The base figure is drawn right away, long before the section scrolls into view; only the board writing is scroll-driven.
+  intro.play();
   // Below 1024 px there is no page-long thread: the board writes itself when the scene comes into view.
   if (!window.matchMedia('(min-width: 1024px)').matches) {
     ScrollTrigger.create({ trigger: scene, start: 'clamp(top 75%)', once: true, onEnter: () => sketch?.duration(3).play() });

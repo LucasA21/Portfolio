@@ -131,7 +131,7 @@ await test('avion-orientacion', async () => {
       for (let s = 0; s <= L; s += 2) { const q = route.getPointAtLength(s); const d = Math.hypot(q.x - x, q.y - y); if (d < bd) { bd = d; best = s; } }
       const a = route.getPointAtLength(Math.max(0, best - 6)), b = route.getPointAtLength(Math.min(L, best + 6));
       const tan = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
-      return { off: bd, diff: Math.abs(((+g.dataset.rot - tan + 540) % 360) - 180) };
+      return { off: bd, diff: Math.abs(((+g.dataset.heading - tan + 540) % 360) - 180) };
     });
     if (!r) continue;
     assert(r.off < 4, `plane is ${r.off}px off the route`);
@@ -188,12 +188,39 @@ await test('cards-elevacion', async () => {
     n.forEach((i) => lifted.add(i)); max = Math.max(max, n.length);
   }
   assert(lifted.size >= 1, 'no card was lifted by the plane');
-  assert(max < total, 'all cards lifted at once');
+  assert(max <= 1, `${max} cards lifted at once`);
+  assert(lifted.size >= Math.min(total, 4), `only ${lifted.size} of ${total} cards lifted in turn`);
   await atFrac(p, 1);
   const stuck = await p.evaluate(() => document.querySelectorAll('.plane-pass').length);
   assert(stuck === 0, `${stuck} cards stayed lifted after the plane left`);
   const top = await p.evaluate(() => { const c = [...document.querySelectorAll('.project-card')].find((e) => e.offsetParent); return getComputedStyle(c).top; });
   assert(top === '0px', `card did not settle: top ${top}`);
+  await p.close();
+});
+
+for (const w of [1440, 1920]) await test(`ruta-sin-verticales-${w}`, async () => {
+  const p = await page({ viewport: { width: w, height: 900 } });
+  const worst = await p.evaluate(() => {
+    let worst = 0;
+    for (const seg of document.querySelectorAll('[data-flight-route]')) {
+      const L = seg.getTotalLength(); let run = 0, prev = seg.getPointAtLength(0);
+      for (let s = 4; s <= L; s += 4) {
+        const q = seg.getPointAtLength(s);
+        const steep = Math.abs(q.y - prev.y) > 0 && Math.abs(q.x - prev.x) / Math.abs(q.y - prev.y) < 0.2; // within ~11 degrees of vertical
+        run = steep ? run + Math.abs(q.y - prev.y) : 0; worst = Math.max(worst, run); prev = q;
+      }
+    }
+    return Math.round(worst);
+  });
+  assert(worst <= 80, `route drops straight down for ${worst}px`);
+  await p.close();
+});
+
+await test('avion-tamano', async () => {
+  const p = await page();
+  await sleep(2500);
+  const wpx = await p.evaluate(() => document.querySelector('[data-plane] [data-frame="plane"]').getBoundingClientRect().width);
+  assert(wpx >= 56 && wpx <= 90, `plane is ${Math.round(wpx)}px wide`);
   await p.close();
 });
 
@@ -267,6 +294,15 @@ await test('about-boceto', async () => {
   await m.evaluate(() => document.querySelector('[data-scene="about"]').scrollIntoView({ block: 'center' })); await sleep(5000);
   assert(await drawn(m, `${sketch}:last-of-type`) > 0.98, 'mobile sketch not complete');
   await m.close();
+});
+
+await test('about-base-visible', async () => {
+  const p = await page();
+  await sleep(2500); // still at the top: the section is far below the viewport
+  const open = await p.evaluate(() => [...document.querySelectorAll('[data-scene="about"] mask [data-reveal]')]
+    .filter((m) => !m.matches('[data-content]') && (() => { const d = getComputedStyle(m).strokeDasharray; return d !== 'none' && parseFloat(d) < m.getTotalLength() * 0.98; })()).length);
+  assert(open === 0, `${open} strokes of the base figure are not drawn before the section is visible`);
+  await p.close();
 });
 
 await test('entrega', async () => {

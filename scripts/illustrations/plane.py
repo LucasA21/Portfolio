@@ -26,7 +26,7 @@ class Pen:
     def j(self, p):
         return (p[0] + self.r.uniform(-1, 1) * self.jitter, p[1] + self.r.uniform(-1, 1) * self.jitter)
 
-    def face(self, pts): self.faces.append(d(pts))
+    def face(self, pts, fill=BG): self.faces.append((d(pts), fill))
 
     def stroke(self, a, b, k=1.0, over=0.0, tp=0.3):
         """One tapered stroke a to b; k scales width; over lets the stroke overshoot b (hand feel)."""
@@ -53,13 +53,13 @@ class Pen:
         for a, b in zip(pts, pts[1:]): self.stroke(a, b, k)
 
     def svg(self):
-        body = ''.join(f'<path fill="{BG}" d="{f}"/>' for f in self.faces) + f'<path fill="{INK}" d="{"".join(self.ink)}"/>'
+        body = ''.join(f'<path fill="{c}" d="{f}"/>' for f, c in self.faces) + f'<path fill="{INK}" d="{"".join(self.ink)}"/>'
         return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {VB[0]} {VB[1]}" fill="none">{body}</svg>\n'
 
 
 # Dart geometry per variant (before jitter): nose, far wing tip, near wing tip, tail on the ridge, keel tail.
 DART = {
-    'A': dict(N=(118, 34), W1=(6, 8), W2=(10, 62), F=(30, 35), K=(22, 48), pen=(1, 4.6, 0.7, 0.6, 0.08), crease=True),
+    'A': dict(N=(118, 36), W1=(8, 14), W2=(6, 66), F=(30, 37), K=(22, 52), pen=(1, 4.6, 0.7, 0.6, 0.08), crease=True, shade='#E6E1D4'),
     'B': dict(N=(120, 33), W1=(4, 4), W2=(13, 66), F=(28, 37), K=(19, 52), pen=(2, 5.5, 2.4, 2.6, 0.35), crease=True, over=3.0),
     'C': dict(N=(98, 36), W1=(24, 4), W2=(26, 68), F=(46, 36), K=(40, 54), pen=(3, 5.6, 0.3, 0.0, 0.1), crease=True, flap=True),
 }
@@ -82,9 +82,10 @@ def draw_plane(v, pen=None, rot=0, shift=(0, 0), scale=1.0):
         return (cx + shift[0] + x * c - y * s, cy + shift[1] + x * s + y * c)
 
     N, W1, W2, F, K = (T(g[k]) for k in ('N', 'W1', 'W2', 'F', 'K'))
-    pen.face([W1, N, F])
+    shade = g.get('shade', BG)  # 3/4 look: the far wing and the keel read darker than the near wing face
+    pen.face([W1, N, F], shade)
     pen.face([N, W2, F])
-    pen.face([N, F, K])
+    pen.face([N, F, K], shade)
     ov = g.get('over', 0)
     pen.stroke(W1, N, 1.0, ov)
     pen.stroke(N, W2, 1.0)
