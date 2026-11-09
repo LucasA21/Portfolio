@@ -26,6 +26,8 @@ export default defineConfig({
       chunkSizeWarningLimit: 2000
     }
   },
+  // The site CSS is small (about 8 KB compressed): inlining it removes a render-blocking request on first paint.
+  build: { inlineStylesheets: 'always' },
 
   integrations: [react(), icon(), sanity({
     projectId: PUBLIC_SANITY_PROJECT_ID,

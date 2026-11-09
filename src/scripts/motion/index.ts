@@ -21,12 +21,26 @@ const QUERIES = {
   reduce: '(prefers-reduced-motion: reduce)',
 };
 
-// Order matters: the flight drives the about sketch and the contact delivery.
-const scenes = [initReveal, initHero, initAbout, initContact, initFlight];
+// What is on screen at load starts right away; the rest starts in later tasks, one scene per task, so measuring the
+// page and building the flight route never block input as one long task. Order matters: contact sets the hooks the
+// flight uses, and the flight picks up a throw that happened before it was ready.
+const first = [initReveal, initHero];
+const later = [initAbout, initContact, initFlight];
 
 gsap.matchMedia().add(QUERIES, (context) => {
   const ctx = context.conditions as MotionContext;
-  scenes.forEach((scene) => scene(ctx));
+  let alive = true;
+  first.forEach((scene) => scene(ctx));
+  const queue = later.map((scene) => context.add(() => scene(ctx)) as unknown as () => void);
+  const next = () => {
+    if (!alive) return;
+    queue.shift()?.();
+    if (queue.length) setTimeout(next, 0);
+  };
+  setTimeout(next, 0);
+  return () => {
+    alive = false;
+  };
 });
 
 // Loops stop while the tab is hidden.

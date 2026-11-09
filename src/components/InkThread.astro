@@ -31,9 +31,6 @@ const frames = { plane, pinned, 'unfold-1': unfold1, 'unfold-2': unfold2, sheet,
     {['a', 'b'].map((k) => [[0.25, 1.1], [0.55, 1.8], [0.95, 2.6]].map(([o, w]) => <path data-trail={k} d="" opacity={o} stroke-width={w} />))}
   </g>
   <g data-ring stroke="#a8433a" stroke-width="2.2"></g>
-  <g data-flash stroke="#a8433a" stroke-width="2.4" opacity="0">
-    <circle r="16" /><circle r="26" opacity="0.5" />
-  </g>
   <g data-plane style="opacity:0">
     <g transform="translate(-62 -36)">
       {Object.entries(frames).map(([name, svg]) => <g data-frame={name} style={name === 'plane' ? '' : 'display:none'} set:html={inner(svg)} />)}

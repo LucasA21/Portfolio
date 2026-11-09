@@ -1,5 +1,7 @@
-// Paper plane flight: leaves the laptop, weaves between the project cards, pins to the board while the diagram is
-// written, takes off again and lands on the mailbox, where contact.ts folds it into the envelope.
+// Paper plane flight. From 1024 px: thrown from Lucas's hand, it weaves between the project cards, glides past the
+// board in Sobre mí and lands on the mailbox, where contact.ts folds it into the envelope, all in step with the scroll.
+// Below 1024 px: thrown off the right edge, it crosses the screen through the gaps between sections and cards, then
+// glides onto the mailbox.
 // The plane is positioned from the route path (getPointAtLength), so no MotionPath plugin is needed.
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -12,7 +14,7 @@ type W = [number, number, number?]; // waypoint with an optional corner radius
 
 const TRAIL = 0.1; // visible trail: share of the route behind the plane
 const SCALE = 0.58; // plane drawing is 124 units wide: about 72 px on screen
-const SCALE_SMALL = 0.5; // about 62 px below 1024 px
+const SCALE_SMALL = 0.42; // about 52 px below 1024 px, small enough to fit the gaps between stacked cards
 const FRAMES = ['unfold-1', 'unfold-2', 'sheet', 'fold-1', 'fold-2'];
 
 let launchFn: (() => void) | null = null;
@@ -91,7 +93,6 @@ export function initFlight({ reduce }: MotionContext) {
   const show = (name: string) => Object.entries(frames).forEach(([k, f]) => (f.style.display = k === name ? '' : 'none'));
   const routes = Object.fromEntries($$<SVGPathElement>(svg, '[data-flight-route]').map((p) => [p.dataset.flightRoute!, p]));
   const trails = (k: string) => $$<SVGPathElement>(svg, `[data-trail="${k}"]`);
-  const flash = $(svg, '[data-flash]')!;
   const ringBox = $(svg, '[data-ring]')!;
 
   // Layout positions that ignore transforms (cards and scenes fade in with a translate), relative to <main>.
@@ -101,8 +102,8 @@ export function initFlight({ reduce }: MotionContext) {
     return { l: x, t: y, w: el.offsetWidth, h: el.offsetHeight, r: x + el.offsetWidth, b: y + el.offsetHeight };
   };
   const sceneScale = (scene: SVGSVGElement) => layout(scene.parentElement as HTMLElement).w / scene.viewBox.baseVal.width;
-  /** Points of a route path hidden inside a scene, mapped to <main> through the viewBox. */
-  const route = (scene: SVGSVGElement | null, name: string): P[] => {
+  /** Points of a route path hidden inside a scene, mapped to <main> through the viewBox (about `n` samples). */
+  const route = (scene: SVGSVGElement | null, name: string, n = 160): P[] => {
     const path = scene?.querySelector<SVGPathElement>(`[data-thread-path="${name}"]`);
     if (!scene || !path) return [];
     const box = layout(scene.parentElement as HTMLElement);
@@ -110,7 +111,7 @@ export function initFlight({ reduce }: MotionContext) {
     const k = box.w / vb.width;
     const L = path.getTotalLength();
     const out: P[] = [];
-    for (let s = 0; s <= L; s += Math.max(4, L / 160)) {
+    for (let s = 0; s < L; s += Math.max(4, L / n)) {
       const p = path.getPointAtLength(s);
       out.push([box.l + (p.x - vb.x) * k, box.t + (p.y - vb.y) * k]);
     }
@@ -124,16 +125,58 @@ export function initFlight({ reduce }: MotionContext) {
   let cards: { el: HTMLElement; ring: SVGRectElement; l: number; r: number; t: number; b: number }[] = [];
   let reach = 60; // how close the plane must be to a card (px from its edge) to light it
   let lit = -1; // index of the one card lit right now
+  /** Below 1024 px the plane does not follow one long route: it crosses the screen through the gaps (waves between
+   *  sections, gaps between stacked cards, above the board) in step with the scroll, then lands on the mailbox. */
+  let crossings: { y: number; h: number; dir: number; row: number[] }[] = [];
+
+  /** Card rings sit just outside each card (the cards cover everything inside them). */
+  const makeCards = (els: HTMLElement[]) =>
+    els.map((el) => {
+      const r = layout(el);
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      ring.setAttribute('x', String(r.l - 4)); ring.setAttribute('y', String(r.t - 4));
+      ring.setAttribute('width', String(r.w + 8)); ring.setAttribute('height', String(r.h + 8));
+      ring.setAttribute('rx', '36');
+      ringBox.appendChild(ring);
+      gsap.set(ring, { drawSVG: '0%' });
+      return { el, ring, l: r.l, r: r.r, t: r.t, b: r.b };
+    });
+
+  const buildCrossings = () => {
+    const els = $$<HTMLElement>(document, '.project-card, .project-featured').filter((c) => c.offsetParent);
+    cards = makeCards(els);
+    const gaps: { y: number; h: number; row: number[] }[] = [];
+    const projects = document.getElementById('projects');
+    const aboutSec = document.getElementById('about');
+    const board = visibleScene('about');
+    if (projects) gaps.push({ y: layout(projects).t - 30, h: 70, row: [] }); // the wave under the hero
+    // Gaps between rows of cards (one card per row on phones, two on tablets); crossing one lights the row below.
+    const rows: number[][] = [];
+    cards.forEach((c, i) => {
+      const r = rows.find((k) => Math.abs(cards[k[0]].t - c.t) < 6);
+      r ? r.push(i) : rows.push([i]);
+    });
+    const bottomOf = (r: number[]) => Math.max(...r.map((i) => cards[i].b));
+    rows.forEach((r, i) => i && gaps.push({ y: (bottomOf(rows[i - 1]) + cards[r[0]].t) / 2, h: cards[r[0]].t - bottomOf(rows[i - 1]), row: r }));
+    if (aboutSec) gaps.push({ y: layout(aboutSec).t - 20, h: 70, row: [] }); // the wave above Sobre mí
+    if (board) gaps.push({ y: layout(board.parentElement as HTMLElement).t - 16, h: 40, row: [] }); // right before the board
+    // Only one crossing on screen at a time: keep them further apart than the scroll each one takes.
+    const range = innerHeight * 0.55;
+    crossings = [];
+    for (const g of gaps) if (!crossings.length || g.y - crossings.at(-1)!.y > range) crossings.push({ ...g, dir: crossings.length % 2 ? 1 : -1 });
+  };
 
   const build = () => {
-    const hero = route(visibleScene('hero'), 'hero');
+    // Below 1024 px only the ends of these routes are used (the throw starts at the hand, the landing is the envelope).
+    const samples = wide && !reduce ? 160 : 1;
+    const hero = route(visibleScene('hero'), 'hero', samples);
     // Sobre mí: the plane skirts the board along its left margin (never crossing the drawing).
     const about = visibleScene('about');
     const ab = about ? layout(about.parentElement as HTMLElement) : null;
     const edge = ab ? Math.max(28, ab.l - 44) : 0;
     const ain: P[] = ab ? [[edge, ab.t - 40], [edge, ab.t + ab.h * 0.3]] : [];
     const aout: P[] = ab ? [[edge, ab.t + ab.h * 0.65], [edge, ab.t + ab.h + 30]] : [];
-    const cin = route(visibleScene('contact'), 'contact');
+    const cin = route(visibleScene('contact'), 'contact', samples);
     const contact = visibleScene('contact');
     if (!hero.length || !ain.length || !aout.length || !cin.length || !contact) return;
     svg.setAttribute('viewBox', `0 0 ${main.clientWidth} ${main.scrollHeight}`);
@@ -154,8 +197,11 @@ export function initFlight({ reduce }: MotionContext) {
     cards = [];
     lit = -1;
     if (!wide || reduce) {
-      routes.a.setAttribute('d', dstr(hero));
+      // The throw: up and out of the right edge of the screen; the first crossing brings it back from there.
+      const h0 = hero[0], W = main.clientWidth;
+      routes.a.setAttribute('d', dstr(rounded([[h0[0], h0[1]], [Math.min(W - 24, h0[0] + 90), h0[1] - 40, 70], [W + 90, h0[1] + 70]])));
       heroFrac = 1;
+      if (!reduce) buildCrossings();
       return;
     }
 
@@ -225,17 +271,7 @@ export function initFlight({ reduce }: MotionContext) {
       gsap.set(t, { drawSVG: '0% 0%' });
     }));
 
-    // Card rings sit just outside each card (the cards cover everything inside them).
-    cards = els.map((el, i) => {
-      const r = rects[i];
-      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      ring.setAttribute('x', String(r.l - 4)); ring.setAttribute('y', String(r.t - 4));
-      ring.setAttribute('width', String(r.w + 8)); ring.setAttribute('height', String(r.h + 8));
-      ring.setAttribute('rx', '36');
-      ringBox.appendChild(ring);
-      gsap.set(ring, { drawSVG: '0%' });
-      return { el, ring, l: r.l, r: r.r, t: r.t, b: r.b };
-    });
+    cards = makeCards(els);
   };
   build();
 
@@ -259,7 +295,7 @@ export function initFlight({ reduce }: MotionContext) {
   }
 
   // ---- Flight state: intro (takeoff on load), scroll progress per stretch, trail lengths ----
-  const st = { live: false, intro: 0, p: 0, wa: TRAIL, wb: TRAIL, lock: false };
+  const st = { live: false, intro: 0, p: 0, s: 0, wa: TRAIL, wb: TRAIL, lock: false };
   const pointAt = (path: SVGPathElement, frac: number) => {
     const L = path.getTotalLength();
     const f = Math.min(1, Math.max(0, frac));
@@ -269,11 +305,27 @@ export function initFlight({ reduce }: MotionContext) {
     return { x: p.x, y: p.y, angle: (Math.atan2(q1.y - q0.y, q1.x - q0.x) * 180) / Math.PI };
   };
   const TAIL_PX = 16; // the trail starts at the plane's tail, not at its centre
-  const setTrail = (id: string, frac: number, width: number) => {
+  /** Trail behind the plane: the stretch it just flew, so it lies ahead on the route when the plane flies back. */
+  const setTrail = (id: string, frac: number, width: number, back = false) => {
     const parts = trails(id);
-    frac -= TAIL_PX / routes[id].getTotalLength();
+    const tail = TAIL_PX / routes[id].getTotalLength();
+    if (back) {
+      const s = Math.min(1, frac + tail), e = Math.min(1, s + width), step = (e - s) / 3;
+      // the strongest part (last in the list) stays next to the plane
+      parts.forEach((t, i) => gsap.set(t, { drawSVG: step <= 0 ? '0% 0%' : `${(e - step * (i + 1)) * 100}% ${(e - step * i) * 100}%` }));
+      return;
+    }
+    frac -= tail;
     const s = Math.max(0, frac - width), step = (frac - s) / 3;
     parts.forEach((t, i) => gsap.set(t, { drawSVG: frac <= 0.0005 || step <= 0 ? '0% 0%' : `${(s + step * i) * 100}% ${(s + step * (i + 1)) * 100}%` }));
+  };
+  // Direction of travel along the route: scrolling up (or the plane flying back to the hand) turns it around,
+  // so it always flies nose first. Changes under half a pixel are ignored, so it never flickers.
+  let back = false, lastTravel = -1;
+  const travelling = (travel: number) => {
+    if (lastTravel >= 0 && Math.abs(travel - lastTravel) > 0.5) back = travel < lastTravel;
+    lastTravel = travel;
+    return back;
   };
   const flightScale = () => (wide ? SCALE : SCALE_SMALL);
   const wrap = (a: number) => ((a + 540) % 360) - 180;
@@ -306,7 +358,9 @@ export function initFlight({ reduce }: MotionContext) {
     let aFrac = st.intro, pbFrac = 0;
     if (wide) {
       const la = routes.a.getTotalLength(), lb = routes.b.getTotalLength(), start = heroFrac * la;
-      const dist = st.intro * la + st.p * (la - start + lb); // the takeoff carries it to the end of the hero stretch, scroll the rest
+      // intro blends from the hand (0) into the scroll-driven position (1), so scrolling during the windup never makes
+      // the plane appear further down the route: it always leaves from the hand and catches up with the scroll.
+      const dist = st.intro * (start + st.p * (la - start + lb));
       if (dist > la) [aFrac, pbFrac] = [1, (dist - la) / lb];
       else aFrac = dist / la;
     }
@@ -315,14 +369,16 @@ export function initFlight({ reduce }: MotionContext) {
     const pos = pointAt(path, onB ? pbFrac : aFrac);
     show('plane');
     planeG.setAttribute('data-phase', onB ? 'landing' : 'flying');
-    const turn = wrap(pos.angle - spin);
+    const la = routes.a.getTotalLength();
+    const rev = travelling(onB ? la + pbFrac * routes.b.getTotalLength() : aFrac * la);
+    const turn = wrap((rev ? pos.angle + 180 : pos.angle) - spin);
     spin = wrap(spin + turn * 0.18);
     const g = glide(spin);
     const bank = Math.max(-10, Math.min(10, turn * 0.4)) * g.flip;
     place(pos.x, pos.y, g.rot + bank, flightScale(), g.flip, spin);
     if (!wide) return;
-    setTrail('a', onB ? 0 : aFrac, st.wa);
-    setTrail('b', onB ? pbFrac : 0, st.wb);
+    setTrail('a', onB ? 0 : aFrac, st.wa, rev && !onB);
+    setTrail('b', onB ? pbFrac : 0, st.wb, rev && onB);
     // One card at a time: the one nearest the plane lifts 4 px and draws its border; it settles when the plane moves on.
     const next = onB ? -1 : nearest(pos.x, pos.y);
     if (next !== lit) {
@@ -332,25 +388,27 @@ export function initFlight({ reduce }: MotionContext) {
     }
   };
 
-  // ---- Takeoff from the hand (flash, then fly the hero stretch) ----
+  // ---- Takeoff from the hand: the plane is live on the release tick, already in the open hand, and leaves fast ----
   const takeoff = () => {
-    const hero = routes.a.getPointAtLength(0);
-    gsap.set(flash, { x: hero.x, y: hero.y, transformOrigin: '0 0' });
-    gsap.timeline()
-      .fromTo(flash, { opacity: 1, scale: 0.4 }, { opacity: 0, scale: 1.6, duration: 0.55, ease: 'power2.out' })
-      .add(() => {
-        st.live = true;
-        render();
-      }, 0.25)
-      .to(st, {
-        intro: heroFrac,
-        duration: 1.5,
-        ease: 'power1.inOut',
-        onUpdate: render,
-        onComplete: () => {
-          if (!wide) gsap.to(planeG, { opacity: 0, duration: 0.4 }); // off frame; the contact scene brings it back
-        },
-      }, 0.3);
+    st.intro = 0;
+    st.live = true;
+    back = false;
+    lastTravel = -1;
+    spin = pointAt(routes.a, 0).angle; // already pointing where it will fly: no turn on the first frame
+    render();
+    gsap.to(st, {
+      intro: 1,
+      duration: wide ? 1.8 : 1.4,
+      ease: 'power1.out', // thrown: fastest when it leaves the hand, then it settles into the glide
+      overwrite: 'auto',
+      onUpdate: render,
+      onComplete: () => {
+        if (!wide) {
+          st.live = false; // off screen to the right: from here on the crossings own the plane
+          renderSmall();
+        }
+      },
+    });
   };
   launchFn = () => takeoff();
   recallFn = (done) => {
@@ -376,11 +434,13 @@ export function initFlight({ reduce }: MotionContext) {
     show('plane');
     const tl = (unfolding = gsap.timeline());
     if (!wide) {
-      // Small screens: no long flight; the plane glides in above the mailbox and drops onto it.
-      Object.assign(pl, { x: mail.x, y: mail.y - mail.w * 1.4, rot: 45, scale: SCALE_SMALL, flip: 1, heading: 45 });
+      // Small screens: the last crossing. The plane glides in from the right edge and lands on the mailbox.
+      const x0 = main.clientWidth + 60, y0 = mail.y - 150;
+      const g = glide((Math.atan2(mail.y - y0, mail.x - x0) * 180) / Math.PI);
+      Object.assign(pl, { x: x0, y: y0, rot: g.rot, scale: SCALE_SMALL, flip: g.flip, heading: 0 });
       apply();
-      gsap.set(planeG, { opacity: 0 });
-      tl.to(planeG, { opacity: 1, duration: 0.2 }).to(pl, { y: mail.y, duration: 0.5, ease: 'power2.inOut', onUpdate: apply }, '<');
+      gsap.set(planeG, { opacity: 1 });
+      tl.to(pl, { x: mail.x, y: mail.y, duration: 0.9, ease: 'sine.inOut', onUpdate: apply });
     }
     tl.to(pl, { rot: 0, scale: envScale(), flip: 1, x: mail.x, y: mail.y, duration: 0.2, ease: 'power2.out', onUpdate: apply });
     FRAMES.forEach((f, i) => tl.add(() => show(f), `>${i ? 0.11 : 0}`));
@@ -403,11 +463,66 @@ export function initFlight({ reduce }: MotionContext) {
     else gsap.set(planeG, { opacity: 0 });
   };
 
+  const mainTop = () => main.getBoundingClientRect().top + window.scrollY;
+  const maxScroll = () => document.documentElement.scrollHeight - innerHeight;
+
+  // ---- Crossings (below 1024 px): each one flies the plane edge to edge while its gap scrolls from 85 % to 30 % ----
+  let crossBack = false, lastKey = -1;
+  function renderSmall() {
+    if (wide || st.lock || st.live) return; // the throw or the delivery own the plane
+    const vh = innerHeight, sy = st.s * maxScroll(), W = main.clientWidth;
+    // A gap already on screen at the top of the page starts its crossing at scroll 0, from the edge, not halfway.
+    const qOf = (k: (typeof crossings)[number]) => (sy - Math.max(0, mainTop() + k.y - vh * 0.85)) / (vh * 0.55);
+    // Nothing crosses before Lucas throws the plane.
+    const c = launched ? crossings.find((k) => qOf(k) > 0 && qOf(k) < 1) : undefined;
+    const lightNext = (n: number) => {
+      if (n === lit) return;
+      if (lit >= 0) setCard(lit, false);
+      if (n >= 0) setCard(n, true);
+      lit = n;
+    };
+    if (!c) {
+      planeG.style.opacity = '0';
+      lightNext(-1);
+      return;
+    }
+    const q = qOf(c);
+    const x0 = c.dir < 0 ? W + 50 : -50, x1 = c.dir < 0 ? -50 : W + 50;
+    const drop = Math.max(10, Math.min(56, c.h - 22)); // gentle descent, never more than the gap allows
+    const x = x0 + (x1 - x0) * q, y = c.y - drop / 2 + drop * q + Math.sin(Math.PI * q) * Math.min(14, c.h / 5) * -1;
+    const dy = drop - Math.cos(Math.PI * q) * Math.PI * Math.min(14, c.h / 5);
+    // Scrolling up runs the crossing backwards: the plane turns around and flies nose first the other way.
+    const key = crossings.indexOf(c) + q;
+    if (lastKey >= 0 && Math.abs(key - lastKey) > 0.002) crossBack = key < lastKey;
+    lastKey = key;
+    const g = glide((Math.atan2(crossBack ? -dy : dy, crossBack ? x0 - x1 : x1 - x0) * 180) / Math.PI);
+    place(x, y, g.rot, SCALE_SMALL, g.flip, g.rot);
+    planeG.setAttribute('data-phase', 'crossing');
+    // The card of the row below that the plane is passing over lights up.
+    const below = c.row.reduce((best, i) => (best < 0 || Math.abs((cards[i].l + cards[i].r) / 2 - x) < Math.abs((cards[best].l + cards[best].r) / 2 - x) ? i : best), -1);
+    lightNext(q > 0.08 && q < 0.95 ? below : -1);
+  }
+  if (!wide) {
+    gsap.to(st, { s: 1, ease: 'none', onUpdate: renderSmall, scrollTrigger: { start: 0, end: 'max', scrub: 0.5, invalidateOnRefresh: true } });
+  }
+
+  // Rebuild on layout changes (fonts, images, resize) on every screen size.
+  let t: number | undefined;
+  const rebuild = () => {
+    clearTimeout(t);
+    t = window.setTimeout(() => {
+      build();
+      ScrollTrigger.refresh();
+      wide ? render() : renderSmall();
+    }, 200);
+  };
+  new ResizeObserver(rebuild).observe(main);
+  document.fonts?.ready.then(rebuild);
+  window.addEventListener('load', rebuild, { once: true });
+
   if (!wide) return;
 
   // ---- Scroll-driven stretches (wide screens) ----
-  const mainTop = () => main.getBoundingClientRect().top + window.scrollY;
-  const maxScroll = () => document.documentElement.scrollHeight - innerHeight;
   const at = (p: P, frac: number) => Math.min(maxScroll(), Math.max(0, mainTop() + p[1] - innerHeight * frac));
   const s2 = () => at(envStart, 0.45);
   const s3 = () => Math.max(s2() + 320, at([mail.x, mail.y], 0.5));
@@ -428,16 +543,4 @@ export function initFlight({ reduce }: MotionContext) {
     },
   });
 
-  let t: number | undefined;
-  const rebuild = () => {
-    clearTimeout(t);
-    t = window.setTimeout(() => {
-      build();
-      ScrollTrigger.refresh();
-      render();
-    }, 200);
-  };
-  new ResizeObserver(rebuild).observe(main);
-  document.fonts?.ready.then(rebuild);
-  window.addEventListener('load', rebuild, { once: true });
 }

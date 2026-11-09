@@ -78,22 +78,24 @@ export function createHeroRig(svg: SVGSVGElement) {
     return tl;
   }
 
-  /** The plane is back at the hand: the open hand appears, closes on it (windup with the plane) and holds. */
+  /** The plane is coming back: the arm rises with the hand open, waiting for it. */
+  function reach() {
+    show('arm-r', 'release');
+    setLook(true);
+  }
+
+  /** The plane reached the open hand: the hand closes on it (windup with the plane) and holds. */
   function catchIt(done: () => void) {
     const tl = gsap.timeline();
-    tl.call(() => {
-      show('arm-r', 'release');
-      setLook(true);
-    }, [], 0);
     tl.call(() => {
       show('arm-r', 'windup');
       show('base-patch', 'windup');
       show('plane-in-hand', 'windup');
       setLook(false);
-    }, [], 3 * TICK);
-    tl.call(done, [], 4 * TICK);
+    }, [], 0);
+    tl.call(done, [], TICK);
     return tl;
   }
 
-  return { show, rest, typing, blink, throwIt, catchIt, setLook };
+  return { show, rest, typing, blink, throwIt, reach, catchIt, setLook };
 }

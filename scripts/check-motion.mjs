@@ -144,14 +144,19 @@ await test('hero-lanzamiento', async () => {
 
 await test('hero-despega-de-la-mano', async () => {
   const p = await page();
+  // Keep scrolling through the windup, like a real wheel: the plane must still leave from the hand.
   await p.mouse.wheel(0, 40);
-  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'throwing' && +document.querySelector('[data-plane]').style.opacity > 0.5, null, { timeout: 4000 });
+  await p.evaluate(async () => { for (let k = 0; k < 6; k++) { scrollBy(0, 30); await new Promise((r) => setTimeout(r, 60)); } });
+  await p.waitForFunction(() => +document.querySelector('[data-plane]').style.opacity > 0.5, null, { timeout: 4000 });
   const d = await p.evaluate(() => {
     const g = document.querySelector('[data-plane]').getBoundingClientRect();
+    // The open hand of the release frame: its top right corner, where the fingers are.
     const hand = document.querySelector('[data-scene="hero"] [data-piece="arm-r"] [data-frame="release"]').getBoundingClientRect();
-    return { px: g.x + g.width / 2, py: g.y + g.height / 2, hx: hand.right, hy: hand.top };
+    return { px: g.x + g.width / 2, py: g.y + g.height / 2, hx: hand.right - hand.width * 0.12, hy: hand.top + hand.height * 0.08, release: document.querySelector('[data-scene="hero"] [data-piece="arm-r"] [data-frame="release"]').getAttribute('visibility') };
   });
-  assert(Math.hypot(d.px - d.hx, d.py - d.hy) < 140, `plane starts ${Math.round(Math.hypot(d.px - d.hx, d.py - d.hy))} px from the hand`);
+  const dist = Math.round(Math.hypot(d.px - d.hx, d.py - d.hy));
+  assert(d.release === 'visible', 'the plane showed up before the release frame');
+  assert(dist < 60, `plane appears ${dist} px from the open hand`);
   await p.close();
 });
 
@@ -398,7 +403,9 @@ for (const w of [1024, 1440, 1920]) await test(`hilo-entre-cards-${w}`, async ()
 await test('about-boceto', async () => {
   const p = await page();
   const sketch = '[data-scene="about"] mask [data-content]';
-  await scrollTo(p, 400);
+  // Right before the scene comes into view the diagram is still blank.
+  await p.evaluate(() => scrollTo(0, document.querySelector('[data-scene="about"]').getBoundingClientRect().top + scrollY - innerHeight * 1.05));
+  await sleep(1400);
   assert(await drawn(p, sketch) < 0.05, 'sketch drawn too early');
   await scrollTo(p, 'max'); await sleep(3000); // the board writes itself once it enters the view
   assert(await drawn(p, `${sketch}:last-of-type`) > 0.98, 'sketch not complete after Sobre mí');
@@ -458,6 +465,48 @@ await test('desdoble-una-vez', async () => {
     return n + (d === 'none' ? (e.getAttribute('d') ? 1 : 0) : parseFloat(d) / e.getTotalLength());
   }, 0));
   assert(left < 0.001, `trail still visible after the delivery: ${(left * 100).toFixed(1)}%`);
+  await p.close();
+});
+
+await test('contacto-sobre-opaco', async () => {
+  const p = await page();
+  const r = await p.evaluate(() => [...document.querySelectorAll('[data-scene="contact"]')].map((sc) => {
+    const env = sc.querySelector('[data-envelope]');
+    const ink = sc.querySelector('[data-ink]');
+    const body = env.querySelector('[data-envelope-body]');
+    return {
+      // drawn after the ink, so the character never shows through it
+      onTop: !!(ink.compareDocumentPosition(env) & Node.DOCUMENT_POSITION_FOLLOWING),
+      opaque: getComputedStyle(body).fill !== 'none' && getComputedStyle(body).fillOpacity === '1',
+      // clipped at the slot, so it vanishes into the mailbox instead of sliding over it
+      clipped: /url\(/.test(env.parentElement.getAttribute('clip-path') ?? ''),
+    };
+  }));
+  assert(r.every((x) => x.onTop && x.opaque && x.clipped), JSON.stringify(r));
+  await p.close();
+});
+
+await test('mobile-cruces', async () => {
+  const p = await page({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const plane = () => p.evaluate(() => { const g = document.querySelector('[data-plane]'); const r = g.getBoundingClientRect(); return { on: g.style.opacity === '1', x: r.x + r.width / 2, y: r.y + r.height / 2, lit: [...document.querySelectorAll('.plane-pass')].length }; });
+  // Before the throw nothing flies.
+  assert(!(await plane()).on || await p.getAttribute('[data-scene="hero"]', 'data-throw') !== null, 'plane visible before the throw');
+  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'away', null, { timeout: 8000 });
+  const max = await p.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  let crossings = 0, was = false, lit = 0, offRoute = 0;
+  for (let y = 0; y <= max; y += 50) {
+    await p.evaluate((y) => scrollTo(0, y), y); await sleep(160);
+    const s = await plane();
+    if (s.on && !was) crossings++;
+    if (s.on && (s.y < 0 || s.y > 844)) offRoute++;
+    lit = Math.max(lit, s.lit);
+    was = s.on;
+  }
+  assert(crossings >= 4, `only ${crossings} crossings below 1024 px`);
+  assert(lit === 1, `cards lit at once while crossing: ${lit}`);
+  assert(offRoute === 0, 'plane shown outside the viewport');
+  await sleep(3000);
+  assert(await p.evaluate(() => [...document.querySelectorAll('[data-scene="contact"]')].find((e) => e.getBoundingClientRect().width > 0).dataset.delivered) === 'true', 'no delivery at the end');
   await p.close();
 });
 

@@ -47,7 +47,7 @@ export function initHero({ reduce }: MotionContext) {
   // Back at the top the plane returns to the hand, the hand catches it and holds it until the next scroll down.
   const catchNow = () => {
     set('recalling');
-    rig.setLook(true);
+    rig.reach();
     recall(() => rig.catchIt(() => (set('held'), scrollY > 8 && throwNow(true))));
   };
 

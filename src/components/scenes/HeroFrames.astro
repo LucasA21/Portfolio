@@ -4,8 +4,9 @@
 import raw from './hero-frames.svg?raw';
 interface Props { class?: string; scene?: string; box?: string }
 const { class: className = '', scene = 'hero', box = '270 280 2560 2520' } = Astro.props;
-// Route of the hero stretch: starts at the fingertips of the release frame, then glides down the right margin.
-const route = 'M2110 520C2400 470 2690 620 2710 1000C2730 1500 2660 1950 2690 2800';
+// Route of the hero stretch: starts in the open hand of the release frame (tail on the palm, nose past the fingers),
+// leaves forward and slightly up like a real throw, then glides down the right margin.
+const route = 'M2190 560C2520 380 2900 460 2960 900C3000 1420 2900 1950 2950 2800';
 ---
 <svg data-scene={scene} data-frames viewBox={box} class={className} role="img" aria-label="Lucas programando en su escritorio con una laptop y un monitor">
   <g set:html={raw} />

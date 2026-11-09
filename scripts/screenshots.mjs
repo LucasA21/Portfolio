@@ -29,6 +29,8 @@ for (const { title, link } of projects) {
     const png = `${OUT}/${id}.png`;
     await page.screenshot({ path: png });
     execFileSync('magick', [png, '-resize', '2000x', '-quality', '82', `${OUT}/${id}.webp`]);
+    // Smaller copies for the cards' srcset (see shotSrcset in src/utils/sanity.ts).
+    for (const w of [600, 1200]) execFileSync('magick', [`${OUT}/${id}.webp`, '-resize', `${w}x`, '-quality', '80', `${OUT}/${id}-${w}.webp`]);
     execFileSync('rm', [png]);
     index[id] = `/screenshots/${id}.webp`;
     console.log('ok     ', title);

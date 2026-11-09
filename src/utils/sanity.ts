@@ -70,6 +70,17 @@ export async function getSettings(): Promise<SiteSettings | null> {
 
 const slug = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+/**
+ * Responsive sources for a card screenshot: the local captures ship at 600 and 1200 px wide next to the 2000 px
+ * original (scripts/screenshots.mjs), and Sanity images are resized by its CDN.
+ */
+export function shotSrcset(url?: string): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('/screenshots/')) { const base = url.replace(/\.webp$/, ''); return `${base}-600.webp 600w, ${base}-1200.webp 1200w`; }
+  if (url.includes('cdn.sanity.io')) return [600, 1200].map((w) => `${url}?w=${w}&auto=format ${w}w`).join(', ');
+  return undefined;
+}
+
 /** A screenshot uploaded in Sanity wins; otherwise the capture made by scripts/screenshots.mjs, if there is one. */
 export async function getProjects(): Promise<Project[]> {
   const projects: Project[] = await sanityClient.fetch(PROJECTS_QUERY);

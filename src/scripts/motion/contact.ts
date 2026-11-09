@@ -30,11 +30,10 @@ export function initContact({ reduce }: MotionContext) {
 
   // Delivery: the envelope slips into the slot, the flag goes up, he nods. The slot lid never moves: it is a clipped
   // copy of the drawing, so rotating it would leave a blank hole where it was.
-  const origin = (envelope as SVGElement).dataset.origin!;
   const post = gsap.timeline({ paused: true, onComplete: () => scene.setAttribute('data-delivered', 'true'), onReverseComplete: () => scene.setAttribute('data-delivered', 'false') });
   post
     .set(envelope, { opacity: 1 })
-    .to(envelope, { y: +(envelope as SVGElement).dataset.slide!, scaleY: 0.1, svgOrigin: origin, duration: 0.55, ease: 'power2.in' }, '+=0.1')
+    .to(envelope, { y: +(envelope as SVGElement).dataset.slide!, duration: 0.7, ease: 'power2.in' }, '+=0.15')
     .set(envelope, { opacity: 0 });
   if (flag) post.to(flag, { rotation: 0, duration: 0.6, ease: 'back.out(3)' }, '+=0.05');
   const head = $(scene, '[data-part="head"]');
@@ -47,7 +46,10 @@ export function initContact({ reduce }: MotionContext) {
     }
   };
 
-  const intro = drawIn(scene, { duration: 1.2 });
+  // The draw-in is built when the scene is one screen away: DrawSVG measures every stroke, which is not free.
+  let intro: gsap.core.Timeline | null = null;
+  const prepare = () => (intro ??= drawIn(scene, { duration: 1.2 }));
+  ScrollTrigger.create({ trigger: scene, start: 'top bottom+=100%', once: true, onEnter: prepare });
   const loops: gsap.core.Animation[] = [blink(scene)];
   const arm = pivot($(scene, '[data-part="forearm"]'));
   if (arm) loops.push(gsap.to(arm, { rotation: -3, duration: 1.2, ease: 'sine.inOut', yoyo: true, repeat: -1, paused: true }));
@@ -62,7 +64,7 @@ export function initContact({ reduce }: MotionContext) {
     start: 'top 80%',
     once: true,
     onEnter: () => {
-      intro.play();
+      prepare().play();
       whileVisible(scene, loops);
     },
   });

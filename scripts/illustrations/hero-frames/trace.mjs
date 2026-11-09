@@ -1,4 +1,4 @@
-// Vectorizes the hand-drawn hero layers (public/hero-capas/*.PNG) into one SVG fragment.
+// Vectorizes the hand-drawn hero layers (art/hero-capas/*.PNG) into one SVG fragment.
 // One <g data-piece> per piece and one <g data-frame> per drawing; ink and fill are traced as filled outlines
 // (potrace), so the variable stroke width is kept. Run: node scripts/illustrations/hero-frames/trace.mjs
 import { execFileSync } from 'node:child_process';
@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import potrace from 'potrace';
 
-const SRC = 'public/hero-capas';
+const SRC = 'art/hero-capas'; // source drawings: kept out of public/ so they are not deployed
 const OUT = 'src/components/scenes/hero-frames.svg';
 const INK = '#531F1F';
 const VIEWBOX = [270, 280, 2560, 2520]; // content spans x 306..2795, y 316..2771 of the 3000 canvas
