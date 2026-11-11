@@ -37,7 +37,7 @@ const projectData = JSON.stringify({ title, description, contentHtml, tags, link
   </div>
 
   <div class="flex flex-col justify-center gap-4 min-w-0">
-    <p class="text-[13px] tracking-[0.18em] uppercase text-text-dark/80">Destacado · en producción</p>
+    <p class="text-sm tracking-[0.18em] uppercase text-text-dark/80">Destacado · en producción</p>
     <h3 class="text-3xl md:text-4xl font-semibold tracking-wide text-accent-brown">{title}</h3>
     <p class="text-lg leading-[155%] text-text-dark/90">{description}</p>
 
@@ -54,7 +54,7 @@ const projectData = JSON.stringify({ title, description, contentHtml, tags, link
 
     <div class="flex flex-wrap items-center gap-x-6 gap-y-1">
       {link && link !== '#' && (
-        <a href={link} target="_blank" rel="noopener noreferrer" class="inline-flex items-center min-h-11 text-base font-medium text-accent-brown underline underline-offset-4 decoration-accent-brown/50 hover:decoration-accent-brown">Ver el sitio</a>
+        <a href={link} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center min-h-11 px-6 rounded-full bg-accent-brown text-main-bg text-base font-medium hover:shadow-lg active:scale-95 transition-all">Ver el sitio</a>
       )}
       <button type="button" class="inline-flex items-center min-h-11 text-base font-medium text-accent-brown underline underline-offset-4 decoration-accent-brown/50 hover:decoration-accent-brown cursor-pointer">Cómo lo hice</button>
     </div>

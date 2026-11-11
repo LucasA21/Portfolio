@@ -3,6 +3,7 @@
 Estado del chequeo: LISTO CON RIESGOS. Rama `redesign/impeccable-update`.
 
 ## Contenido (lo carga Lucas en `/admin` o en `public/`)
+- [ ] Cargar el copy de `.agents/copy-sanity.md` (posicionamiento frontend UI/UX, contacto "Mandame un avión.", TheJudex sin backend) en `staging` y en `production` al mergear: el sitio en vivo muestra el copy viejo hasta entonces.
 - [ ] Reemplazar en Sanity los textos viejos que pisan los nuevos: hero (título, subtítulo, saludo), tagline y descripción de contacto.
 - [ ] Cargar `highlights` de TheJudex (páginas indexadas, Lighthouse, qué hizo Lucas) y marcarlo `featured`.
 - [ ] Subir capturas reales (`screenshot` con `alt`) de TheJudex, Lumen, Tamara Vasak, SyncLife y PixDex.

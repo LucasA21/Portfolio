@@ -84,7 +84,7 @@ export function initFlight({ reduce }: MotionContext) {
   const svg = document.querySelector<SVGSVGElement>('[data-thread]');
   launchFn = null;
   recallFn = null;
-  hooks.unfold = hooks.reset = null;
+  hooks.unfold = hooks.refold = hooks.reset = null;
   if (!svg) return;
   const wide = window.matchMedia('(min-width: 1024px)').matches;
   const main = svg.parentElement!;
@@ -295,7 +295,7 @@ export function initFlight({ reduce }: MotionContext) {
   }
 
   // ---- Flight state: intro (takeoff on load), scroll progress per stretch, trail lengths ----
-  const st = { live: false, intro: 0, p: 0, s: 0, wa: TRAIL, wb: TRAIL, lock: false };
+  const st = { live: false, intro: 0, p: 0, s: 0, wa: TRAIL, wb: TRAIL, lock: false, blend: 1 };
   const pointAt = (path: SVGPathElement, frac: number) => {
     const L = path.getTotalLength();
     const f = Math.min(1, Math.max(0, frac));
@@ -351,6 +351,7 @@ export function initFlight({ reduce }: MotionContext) {
     c.el.classList.toggle('plane-pass', on);
     gsap.to(c.ring, { drawSVG: on ? '100%' : '0%', duration: 0.5, ease: 'power2.out', overwrite: true });
   };
+  const from = { x: 0, y: 0, rot: 0, scale: 1 }, target = { x: 0, y: 0 };
   const render = () => {
     if (!st.live || st.lock) return;
     // One continuous run: scroll progress maps linearly onto the arc length of route a followed by route b, so the plane
@@ -375,8 +376,12 @@ export function initFlight({ reduce }: MotionContext) {
     spin = wrap(spin + turn * 0.18);
     const g = glide(spin);
     const bank = Math.max(-10, Math.min(10, turn * 0.4)) * g.flip;
-    place(pos.x, pos.y, g.rot + bank, flightScale(), g.flip, spin);
+    // After the refold the plane eases from the mailbox pose (`from`) into its scroll position (blend 0 to 1).
+    const m = st.blend;
+    Object.assign(target, { x: pos.x, y: pos.y });
+    place(from.x + (pos.x - from.x) * m, from.y + (pos.y - from.y) * m, from.rot + (g.rot + bank - from.rot) * m, from.scale + (flightScale() - from.scale) * m, g.flip, spin);
     if (!wide) return;
+    if (m < 1) { setTrail('a', 0, 0); setTrail('b', 0, 0); return; }
     setTrail('a', onB ? 0 : aFrac, st.wa, rev && !onB);
     setTrail('b', onB ? pbFrac : 0, st.wb, rev && onB);
     // One card at a time: the one nearest the plane lifts 4 px and draws its border; it settles when the plane moves on.
@@ -427,13 +432,15 @@ export function initFlight({ reduce }: MotionContext) {
 
   // ---- Delivery: the plane unfolds into a sheet and refolds as the envelope (the envelope itself is contact.ts) ----
   const envScale = () => mail.w / 100; // the envelope fills 100 of the 124 drawing units
-  let unfolding: gsap.core.Timeline | null = null;
+  let unfolding: gsap.core.Animation | null = null;
   hooks.unfold = (go) => {
     unfolding?.kill();
     st.lock = true;
+    st.blend = 1;
     show('plane');
     const tl = (unfolding = gsap.timeline());
     if (!wide) {
+      clearTrail();
       // Small screens: the last crossing. The plane glides in from the right edge and lands on the mailbox.
       const x0 = main.clientWidth + 60, y0 = mail.y - 150;
       const g = glide((Math.atan2(mail.y - y0, mail.x - x0) * 180) / Math.PI);
@@ -455,10 +462,48 @@ export function initFlight({ reduce }: MotionContext) {
       setTrail('b', 0, 0);
     }
   };
+  // Back up from the mailbox: the envelope has left the slot; it folds back into the plane (the frames in reverse) and the
+  // plane flies on: desktop eases into its scroll position, small screens glide out through the right edge.
+  hooks.refold = () => {
+    unfolding?.kill();
+    st.lock = true;
+    st.wb = TRAIL;
+    Object.assign(pl, { x: mail.x, y: mail.y, rot: 0, scale: envScale(), flip: 1, heading: 0 });
+    apply();
+    show('fold-2');
+    gsap.set(planeG, { opacity: 1 });
+    const tl = (unfolding = gsap.timeline());
+    [...FRAMES].reverse().slice(1).forEach((f) => tl.add(() => show(f), '>0.07'));
+    tl.add(() => show('plane'), '>0.07');
+    if (wide) {
+      tl.add(() => {
+        Object.assign(from, { x: pl.x, y: pl.y, rot: pl.rot, scale: pl.scale });
+        st.blend = 0;
+        st.lock = false;
+        render();
+        // the farther the scroll position, the longer the catch-up, so the plane never darts across the page
+        const duration = Math.min(0.8, Math.max(0.25, Math.hypot(target.x - from.x, target.y - from.y) / 1600));
+        unfolding = gsap.to(st, { blend: 1, duration, ease: 'power2.inOut', onUpdate: render });
+      });
+    } else {
+      clearTrail();
+      const x0 = main.clientWidth + 60, y0 = mail.y - 150;
+      const g = glide((Math.atan2(y0 - mail.y, x0 - mail.x) * 180) / Math.PI);
+      tl.to(pl, { rot: g.rot, scale: SCALE_SMALL, flip: g.flip, duration: 0.12, ease: 'power2.out', onUpdate: apply });
+      tl.to(pl, { x: x0, y: y0, duration: 0.6, ease: 'sine.inOut', onUpdate: apply });
+      tl.add(() => {
+        gsap.set(planeG, { opacity: 0 });
+        st.lock = false;
+        renderSmall();
+      });
+    }
+  };
   hooks.reset = () => {
     unfolding?.kill();
     st.lock = false;
+    st.blend = 1;
     st.wb = TRAIL;
+    show('plane'); // the unfold may have been cut mid-frame
     if (wide) render();
     else gsap.set(planeG, { opacity: 0 });
   };
@@ -468,6 +513,17 @@ export function initFlight({ reduce }: MotionContext) {
 
   // ---- Crossings (below 1024 px): each one flies the plane edge to edge while its gap scrolls from 85 % to 30 % ----
   let crossBack = false, lastKey = -1;
+  // Short trail of a crossing: the last ~120 px the plane flew, sampled every 4 px, in three strokes (the strongest at the plane).
+  const TRAIL_SMALL = 120;
+  let hist: P[] = [], histCross: (typeof crossings)[number] | undefined;
+  const writeTrail = () => {
+    const parts = trails('m'), n = hist.length;
+    parts.forEach((t, i) => t.setAttribute('d', n < 2 ? '' : dstr(hist.slice(Math.floor(((n - 1) * i) / 3), Math.floor(((n - 1) * (i + 1)) / 3) + 1))));
+  };
+  const clearTrail = () => {
+    hist = [];
+    writeTrail();
+  };
   function renderSmall() {
     if (wide || st.lock || st.live) return; // the throw or the delivery own the plane
     const vh = innerHeight, sy = st.s * maxScroll(), W = main.clientWidth;
@@ -484,6 +540,8 @@ export function initFlight({ reduce }: MotionContext) {
     if (!c) {
       planeG.style.opacity = '0';
       lightNext(-1);
+      lastKey = -1;
+      if (hist.length) clearTrail();
       return;
     }
     const q = qOf(c);
@@ -493,8 +551,16 @@ export function initFlight({ reduce }: MotionContext) {
     const dy = drop - Math.cos(Math.PI * q) * Math.PI * Math.min(14, c.h / 5);
     // Scrolling up runs the crossing backwards: the plane turns around and flies nose first the other way.
     const key = crossings.indexOf(c) + q;
+    const wasBack = crossBack;
     if (lastKey >= 0 && Math.abs(key - lastKey) > 0.002) crossBack = key < lastKey;
     lastKey = key;
+    // A new crossing or a turn-around starts a fresh trail: it only shows ground the plane just covered.
+    if (c !== histCross || crossBack !== wasBack) hist = [];
+    histCross = c;
+    const tip = hist.at(-1);
+    if (!tip || Math.hypot(x - tip[0], y - tip[1]) >= 4) hist.push([x, y]);
+    while (hist.length > 2 && plen(hist) > TRAIL_SMALL) hist.shift();
+    writeTrail();
     const g = glide((Math.atan2(crossBack ? -dy : dy, crossBack ? x0 - x1 : x1 - x0) * 180) / Math.PI);
     place(x, y, g.rot, SCALE_SMALL, g.flip, g.rot);
     planeG.setAttribute('data-phase', 'crossing');

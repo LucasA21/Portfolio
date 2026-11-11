@@ -28,7 +28,7 @@ const { contact, linkedin } = Astro.props;
         {contact.description}
       </p>
   
-      <a href={`mailto:${contact.email}`} class="inline-flex items-center min-h-11 text-[clamp(1rem,5vw,40px)] font-medium tracking-wide text-accent-brown break-all md:break-normal underline decoration-2 underline-offset-[10px] decoration-accent-brown/60 hover:decoration-accent-brown transition-colors">
+      <a href={`mailto:${contact.email}`} class="mail-link relative inline-flex items-center min-h-11 text-[clamp(1rem,5vw,40px)] font-medium tracking-wide text-accent-brown break-all md:break-normal">
         {contact.email}
       </a>
 

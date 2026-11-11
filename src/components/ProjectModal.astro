@@ -19,7 +19,7 @@
       <!-- Top: Carousel -->
       <div class="w-full h-[30%] md:h-[40%] relative group/carousel bg-black/90 shrink-0 cursor-zoom-in">
         <!-- Main Image -->
-        <div id="modal-image-container" class="w-full h-full relative overflow-hidden bg-black/95">
+        <div id="modal-image-container" role="button" tabindex="0" aria-label="Ampliar imagen del proyecto" class="w-full h-full relative overflow-hidden bg-black/95 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white">
             <img 
                 id="modal-main-image" 
                 src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
@@ -61,17 +61,17 @@
         <!-- UI Layer (Absolute elements) -->
         <div class="fixed inset-0 w-full h-full pointer-events-none">
             <!-- Close Lightbox -->
-            <button id="close-lightbox" class="absolute top-8 right-8 lg:top-12 lg:right-12 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 z-110 pointer-events-auto transition-all active:scale-90 shadow-2xl">
-                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            <button id="close-lightbox" class="absolute top-8 right-8 lg:top-12 lg:right-12 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 z-110 pointer-events-auto transition-all active:scale-90 shadow-2xl" aria-label="Cerrar vista ampliada">
+                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
  
             <!-- Lightbox Arrows -->
             <div class="absolute inset-x-4 lg:inset-x-8 top-1/2 -translate-y-1/2 hidden lg:flex justify-between items-center pointer-events-none z-120">
-                <button id="lightbox-prev" class="p-4 md:p-6 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 pointer-events-auto transition-all active:scale-75 shadow-2xl">
-                    <svg class="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                <button id="lightbox-prev" class="p-4 md:p-6 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 pointer-events-auto transition-all active:scale-75 shadow-2xl" aria-label="Imagen anterior">
+                    <svg class="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
-                <button id="lightbox-next" class="p-4 md:p-6 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 pointer-events-auto transition-all active:scale-75 shadow-2xl">
-                    <svg class="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 5l6 6-6 6"/></svg>
+                <button id="lightbox-next" class="p-4 md:p-6 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 pointer-events-auto transition-all active:scale-75 shadow-2xl" aria-label="Imagen siguiente">
+                    <svg class="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l6 6-6 6"/></svg>
                 </button>
             </div>
 

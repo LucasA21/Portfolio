@@ -46,7 +46,7 @@
 
     --font-sans: "Halant", sans-serif;
     --font-hand: "Kalam", cursive;
-    --color-accent-warm: #a8433a;
+    --color-accent-warm: #a8433a; /* do not lighten: 4.55:1 on the section background, it passes by 0.05 */
 }
 
 html, body {
@@ -207,9 +207,35 @@ a:not([class]) {
     scrollbar-color: color-mix(in srgb, var(--color-accent-brown) 30%, transparent) var(--color-main-bg);
 }
 
-/* Cards lift 4 px while the paper plane passes them (see src/scripts/motion/flight.ts). */
+/* Cards lift 4 px while the paper plane passes them and it draws an ink ring around them (see src/scripts/motion/flight.ts).
+   Hover only lifts and casts a shadow: no border change, so the two cues never look alike. */
 .project-card, .project-featured { top: 0; }
 .project-card.plane-pass, .project-featured.plane-pass { top: -4px; }
 @media (prefers-reduced-motion: no-preference) {
   .project-card, .project-featured { transition: transform 0.5s ease-out, border-color 0.5s ease-out, box-shadow 0.5s ease-out, top 0.3s ease-out; }
+}
+
+/* Closing beat of the story: the address underlines itself in ink when the mail lands (`is-delivered`, set by contact.ts). */
+.mail-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.4rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-accent-brown);
+  opacity: 0.6;
+  transform-origin: left;
+  transition: opacity 0.3s ease;
+}
+.mail-link:hover::after { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  #contact.mail-wait .mail-link::after { transform: scaleX(0); }
+  #contact.is-delivered .mail-link::after { transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.5s, opacity 0.3s ease; }
+  #contact.is-delivered [data-copy-mail] { animation: mail-pulse 0.9s ease-out 1.1s 1; }
+}
+@keyframes mail-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  40% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-accent-brown) 25%, transparent); }
 }

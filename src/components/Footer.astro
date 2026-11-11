@@ -12,9 +12,11 @@ interface FooterData {
 
 interface Props {
   footer: FooterData;
+  githubUrl?: string;
+  cvUrl?: string;
 }
 
-const { footer } = Astro.props;
+const { footer, githubUrl, cvUrl } = Astro.props;
 const year = new Date().getFullYear();
 ---
 
@@ -25,9 +27,12 @@ const year = new Date().getFullYear();
     </p>
     
     <div class="flex items-center gap-8">
-      {footer.navLinks.map((link) => (
-        <a href={link.href} class="inline-flex items-center min-h-11 hover:text-accent-brown hover:opacity-100 hover:scale-105 active:scale-95 transition-all">{link.label}</a>
-      ))}
+      {githubUrl && (
+        <a href={githubUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center min-h-11 hover:text-accent-brown hover:opacity-100 hover:scale-105 active:scale-95 transition-all">GitHub</a>
+      )}
+      {cvUrl && (
+        <a href={cvUrl} download class="inline-flex items-center min-h-11 hover:text-accent-brown hover:opacity-100 hover:scale-105 active:scale-95 transition-all">Descargar CV</a>
+      )}
     </div>
   </div>
 </footer>

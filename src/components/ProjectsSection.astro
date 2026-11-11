@@ -23,7 +23,7 @@ const rest = projects.filter((p) => p !== featured);
 
     {featured && <FeaturedProject project={featured} />}
 
-    <div id="projects-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger-group">
+    <div id="projects-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-group">
       {rest.map((project) => (
         <ProjectCard
           id={project._id}
@@ -60,18 +60,19 @@ const rest = projects.filter((p) => p !== featured);
 
 <script>
   function setupProjects() {
-    // "Ver más": first batch depends on columns (1 col: 3, 2 cols: 4, 3 cols: 6).
+    // "Ver más": first batch is one row (1 col: 3, 2 cols: 4, 3 cols: 3).
     const grid = document.getElementById('projects-container');
     const moreWrap = document.getElementById('projects-more-wrap');
     const moreBtn = document.getElementById('projects-more');
     if (grid && moreWrap && moreBtn) {
       const cards = [...grid.querySelectorAll<HTMLElement>('.project-card')];
       let expanded = false;
-      const limit = () => (matchMedia('(min-width: 1024px)').matches ? 8 : matchMedia('(min-width: 768px)').matches ? 4 : 3);
+      const limit = () => (matchMedia('(min-width: 1024px)').matches ? 3 : matchMedia('(min-width: 768px)').matches ? 4 : 3);
       const label = document.getElementById('projects-more-label')!;
       const arrow = document.getElementById('projects-more-arrow')!;
       const apply = () => {
-        const n = limit();
+        // Below 1024 px a button that hides a single card is not worth the extra tap: show it. Desktop keeps one row.
+        const base = limit(), n = cards.length - base === 1 && !matchMedia('(min-width: 1024px)').matches ? cards.length : base;
         cards.forEach((c, i) => {
           const show = expanded || i < n;
           c.classList.toggle('hidden', !show);
@@ -158,12 +159,22 @@ const rest = projects.filter((p) => p !== featured);
         updateModalImage(index); // Sync modal carousel
     }
 
-    if (modalImgContainer) {
-      // Click to open Lightbox
-      modalImgContainer.addEventListener('click', () => {
+    function openLightbox() {
         updateLightboxImage(currentImgIndex);
         lightbox.showModal();
         stopAutoplay();
+    }
+
+    if (modalImgContainer) {
+      // Click and keydown to open Lightbox
+      modalImgContainer.addEventListener('click', openLightbox);
+      modalImgContainer.addEventListener('keydown', (e) => {
+        if (e.target !== modalImgContainer) return;
+        if (e.key === ' ' || e.key === 'Enter') {
+          // Stops the keypress from landing on the lightbox close button, which takes focus on open
+          e.preventDefault();
+          openLightbox();
+        }
       });
 
       addSwipeSupport(

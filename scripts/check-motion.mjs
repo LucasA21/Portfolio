@@ -19,6 +19,7 @@ async function waitForServer() {
 
 const results = [];
 async function test(name, fn) {
+  if (process.env.ONLY && !new RegExp(process.env.ONLY).test(name)) return; // ONLY=entrega runs just the matching tests
   try { await fn(); results.push([name, 'ok']); }
   catch (e) { results.push([name, `FAIL: ${e.message}`]); }
 }
@@ -250,11 +251,15 @@ await test('avion-orientacion', async () => {
       for (let s = 0; s <= L; s += 2) { const q = route.getPointAtLength(s); const d = Math.hypot(q.x - x, q.y - y); if (d < bd) { bd = d; best = s; } }
       const a = route.getPointAtLength(Math.max(0, best - 6)), b = route.getPointAtLength(Math.min(L, best + 6));
       const tan = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
-      return { off: bd, diff: Math.abs(((+g.dataset.heading - tan + 540) % 360) - 180) };
+      // The flight reads the heading over 1 % of the route (the lookahead the nose follows), so at a corner that tangent is the right one too.
+      const w = L * 0.01, a2 = route.getPointAtLength(Math.max(0, best - w)), b2 = route.getPointAtLength(Math.min(L, best + w));
+      const tan2 = Math.atan2(b2.y - a2.y, b2.x - a2.x) * 180 / Math.PI;
+      const off = (t) => Math.abs(((+g.dataset.heading - t + 540) % 360) - 180);
+      return { off: bd, diff: Math.min(off(tan), off(tan2)) };
     });
     if (!r) continue;
     assert(r.off < 4, `plane is ${r.off}px off the route`);
-    assert(r.diff < 25, `nose points ${r.diff} degrees away from the heading`);
+    assert(r.diff < 25, `nose points ${r.diff} degrees away from the heading at ${f} (${JSON.stringify(r)})`);
     // The drawn plane must sit on the route too, with its trail behind it (not beside it).
     const seen = await p.evaluate(() => {
       const g = document.querySelector('[data-plane]'); const box = g.getBoundingClientRect(); const svg = document.querySelector('[data-thread]').getBoundingClientRect();
@@ -451,6 +456,76 @@ await test('entrega', async () => {
   await p.close();
 });
 
+// Coming back up from the mailbox: the envelope leaves the slot, folds back into the plane (the six frames in reverse) and the plane flies on.
+const REFOLD = ['fold-2', 'fold-1', 'sheet', 'unfold-2', 'unfold-1', 'plane'];
+async function refoldRun(p) {
+  await p.evaluate(() => {
+    const g = document.querySelector('[data-plane]');
+    const env = [...document.querySelectorAll('[data-scene="contact"]')].find((e) => e.getBoundingClientRect().width > 0).querySelector('[data-envelope]');
+    window.__rec = [];
+    setInterval(() => window.__rec.push({
+      env: +env.style.opacity > 0, plane: g.style.opacity === '1',
+      frame: [...g.querySelectorAll('[data-frame]')].find((f) => f.style.display !== 'none')?.dataset.frame,
+      x: +g.dataset.x, y: +g.dataset.y, phase: g.dataset.phase,
+    }), 50);
+  });
+  const max = await p.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  for (let y = max, i = 0; i < 25; i++, y -= 90) { await p.evaluate((y) => scrollTo(0, y), y); await sleep(120); }
+  await sleep(2500);
+  const rec = await p.evaluate(() => window.__rec);
+  const after = rec.slice(rec.findIndex((s) => s.env || s.plane)); // from the first sign of life on the way back
+  return { rec: after, last: rec.at(-1) };
+}
+const refoldChecks = (rec, tail, glideEnd = Infinity) => {
+  assert(!rec.some((s) => s.env && s.plane), 'envelope and plane visible at the same time');
+  const seq = rec.filter((s) => s.plane).map((s) => s.frame).filter((f, i, a) => f !== a[i - 1]);
+  const from = seq.indexOf('fold-2');
+  assert(from >= 0 && REFOLD.every((f, i) => seq[from + i] === f), `frames out of order: ${seq.join(' > ')}`);
+  // The hand-over itself (the fold plus `tail` samples of easing or gliding out) must be continuous; after that the scroll drives the plane at its own pace.
+  const start = rec.findIndex((s) => s.plane && s.frame === 'plane');
+  const exit = rec.findIndex((s, i) => i > start && s.x >= glideEnd); // small screens: the plane leaves through the right edge, then the next crossing owns it
+  rec = rec.slice(0, exit >= 0 ? exit + 1 : start + tail);
+  const gap = (i) => (rec[i].plane && rec[i - 1].plane ? Math.hypot(rec[i].x - rec[i - 1].x, rec[i].y - rec[i - 1].y) : 0);
+  const at = rec.map((_, i) => (i ? gap(i) : 0)).reduce((b, d, i, a) => (d > a[b] ? i : b), 0);
+  if (process.env.DEBUG) console.log(rec.map((s) => `${s.env ? 'E' : '-'}${s.plane ? 'P' : '-'} ${s.frame} ${Math.round(s.x)},${Math.round(s.y)}`).join('\n'));
+  assert(gap(at) <= 200, `plane jumped ${gap(at).toFixed(0)} px between samples (50 ms): ${JSON.stringify(rec.slice(Math.max(0, at - 2), at + 2))}`);
+};
+await test('entrega-reversa', async () => {
+  const p = await page();
+  await scrollTo(p, 'max'); await sleep(3200);
+  const { rec, last } = await refoldRun(p);
+  refoldChecks(rec, 10);
+  assert(await p.getAttribute('[data-scene="contact"]', 'data-delivered') === 'false', 'still delivered');
+  assert(last.plane && (last.phase === 'flying' || last.phase === 'landing'), `plane not flying at the end: ${JSON.stringify(last)}`);
+  await p.close();
+});
+await test('entrega-reversa-mobile', async () => {
+  const p = await page({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'away', null, { timeout: 8000 });
+  await scrollTo(p, 'max'); await sleep(4500);
+  const { rec, last } = await refoldRun(p);
+  refoldChecks(rec, 24, 440);
+  const scene = await p.evaluate(() => [...document.querySelectorAll('[data-scene="contact"]')].find((e) => e.getBoundingClientRect().width > 0).dataset.delivered);
+  assert(scene === 'false', 'still delivered');
+  assert(!last.plane || last.phase === 'crossing', `plane stuck on screen: ${JSON.stringify(last)}`);
+  await p.close();
+});
+
+await test('contacto-cierre', async () => {
+  const p = await page();
+  const cls = () => p.evaluate(() => ({ done: document.getElementById('contact').classList.contains('is-delivered'), wait: document.getElementById('contact').classList.contains('mail-wait'), line: getComputedStyle(document.querySelector('#contact .mail-link'), '::after').transform }));
+  assert((await cls()).wait, 'underline not waiting before the delivery');
+  await scrollTo(p, 'max'); await sleep(3500);
+  const on = await cls();
+  assert(on.done && !on.wait && !/matrix\(0,/.test(on.line), `closing beat did not run: ${JSON.stringify(on)}`);
+  await p.evaluate(() => scrollTo(0, document.getElementById('about').offsetTop)); await sleep(2200);
+  assert(!(await cls()).done, 'is-delivered stayed after scrolling up');
+  await p.close();
+  const r = await page({ reducedMotion: 'reduce' });
+  await scrollTo(r, 'max');
+  assert(await r.evaluate(() => document.getElementById('contact').classList.contains('is-delivered') && getComputedStyle(document.querySelector('#contact .mail-link'), '::after').transform === 'none'), 'reduced motion: underline not drawn');
+  await r.close();
+});
 await test('desdoble-una-vez', async () => {
   const p = await page();
   await p.evaluate(() => { window.__unfolds = 0; const g = document.querySelector('[data-plane]'); new MutationObserver((ms) => ms.forEach((m) => { if (m.target.dataset?.frame === 'sheet' && m.target.style.display !== 'none') window.__unfolds++; })).observe(g, { subtree: true, attributes: true, attributeFilter: ['style'] }); });
@@ -513,10 +588,44 @@ await test('mobile-cruces', async () => {
 await test('mobile-sin-estela', async () => {
   const p = await page({ viewport: { width: 390, height: 844 }, isMobile: true });
   await sleep(3200);
-  const r = await p.evaluate(() => ({ trail: [...document.querySelectorAll('[data-trail]')].every((t) => !t.getAttribute('d')) , y: scrollY }));
+  const r = await p.evaluate(() => ({ trail: [...document.querySelectorAll('[data-trail="a"], [data-trail="b"]')].every((t) => !t.getAttribute('d')), y: scrollY }));
   assert(r.trail, `long trail present below 1024px: ${JSON.stringify(r)}`);
   await p.evaluate(() => document.getElementById('contact').scrollIntoView()); await sleep(4500);
   assert(await p.evaluate(() => [...document.querySelectorAll('[data-scene="contact"]')].find((e) => e.getBoundingClientRect().width > 0).dataset.delivered) === 'true', 'plane did not deliver on mobile');
+  await p.close();
+});
+
+await test('mobile-estela', async () => {
+  const p = await page({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await p.waitForFunction(() => document.querySelector('[data-scene="hero"]').dataset.throw === 'away', null, { timeout: 8000 });
+  await sleep(1800); // the throw leaves the plane off the right edge
+  const sample = () => p.evaluate(() => {
+    const g = document.querySelector('[data-plane]');
+    const parts = [...document.querySelectorAll('[data-trail="m"]')].filter((t) => t.getAttribute('d'));
+    const last = parts.at(-1);
+    const end = last?.getPointAtLength(last.getTotalLength());
+    return {
+      crossing: g.style.opacity === '1' && g.dataset.phase === 'crossing', x: +g.dataset.x, y: +g.dataset.y,
+      len: parts.reduce((n, t) => n + t.getTotalLength(), 0), end: end ? { x: end.x, y: end.y } : null,
+    };
+  });
+  const max = await p.evaluate(() => document.documentElement.scrollHeight - innerHeight - 900); // stop before the delivery
+  const seen = { crossing: 0, trail: 0, longest: 0, far: 0, ghost: 0 };
+  for (const dir of [1, -1]) {
+    for (let k = 0; k <= max / 50; k++) {
+      await p.evaluate((y) => scrollTo(0, y), dir > 0 ? k * 50 : max - k * 50); await sleep(160);
+      const s = await sample();
+      if (s.crossing) {
+        seen.crossing++;
+        if (s.len > 0) { seen.trail++; seen.longest = Math.max(seen.longest, s.len); if (Math.hypot(s.end.x - s.x, s.end.y - s.y) > 30) seen.far++; }
+      } else if (s.len > 0) seen.ghost++;
+    }
+  }
+  assert(seen.crossing > 10, `too few crossings sampled: ${JSON.stringify(seen)}`);
+  assert(seen.trail >= seen.crossing * 0.7, `crossings without trail: ${JSON.stringify(seen)}`);
+  assert(seen.longest <= 160, `trail too long: ${JSON.stringify(seen)}`);
+  assert(seen.far === 0, `trail end away from the plane: ${JSON.stringify(seen)}`);
+  assert(seen.ghost === 0, `trail left without a crossing: ${JSON.stringify(seen)}`);
   await p.close();
 });
 
@@ -532,13 +641,33 @@ await test('contacto-mobile', async () => {
 });
 
 await test('overflow', async () => {
-  for (const w of [360, 390, 768, 1024, 1280, 1440, 1920]) {
-    const p = await page({ viewport: { width: w, height: 900 } });
+  // 320x256 is 400 % zoom on a 1280 px screen, 720x450 is 200 % on 1440 px.
+  for (const [w, h] of [[320, 256], [360, 900], [390, 900], [720, 450], [768, 900], [1024, 900], [1280, 900], [1440, 900], [1920, 900]]) {
+    const p = await page({ viewport: { width: w, height: h } });
     const o = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     assert(o === 0, `${w}px overflows by ${o}px`);
     assert(p.errors.length === 0, `${w}px errors: ${p.errors}`);
     await p.close();
   }
+});
+
+await test('ruta-recalculo', async () => {
+  const p = await page();
+  await p.mouse.wheel(0, 40); await sleep(3000);
+  await p.setViewportSize({ width: 1100, height: 800 }); await sleep(1500); // the flight rebuilds its routes 200 ms after a resize
+  for (const f of [0.1, 0.2, 0.3]) {
+    await atFrac(p, f);
+    const off = await p.evaluate(() => {
+      const g = document.querySelector('[data-plane]'); const route = document.querySelector('[data-flight-route="a"]');
+      if (g.dataset.phase !== 'flying') return 0;
+      const L = route.getTotalLength(); let bd = 1e9;
+      for (let s = 0; s <= L; s += 2) { const q = route.getPointAtLength(s); bd = Math.min(bd, Math.hypot(q.x - +g.dataset.x, q.y - +g.dataset.y)); }
+      return bd;
+    });
+    assert(off < 4, `plane ${off.toFixed(1)}px off the route after resizing`);
+  }
+  assert(p.errors.length === 0, `errors: ${p.errors}`);
+  await p.close();
 });
 
 await browser.close();

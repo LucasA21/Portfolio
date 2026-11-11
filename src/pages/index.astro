@@ -45,7 +45,7 @@ const { hero, seo, about, contact, footer, socialLinks } = settings;
   <div class="w-full bg-wave-bg pb-10">
     <div class="max-w-5xl mx-auto px-6 pt-4">
       <ContactSection contact={contact as any} linkedin={socialLinks?.find((l) => l.platform === 'linkedin')?.url} />
-      <Footer footer={footer as any} />
+      <Footer footer={footer as any} githubUrl={socialLinks?.find((l) => l.platform === 'github')?.url} cvUrl={about?.cvUrl} />
     </div>
   </div>
 

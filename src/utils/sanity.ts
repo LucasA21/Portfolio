@@ -102,27 +102,27 @@ export async function getSiteData(): Promise<SiteData> {
 
   const settings: SiteSettings = {
     hero: {
-      greeting: rawSettings?.hero?.greeting ?? 'hola, soy Lk',
-      title: rawSettings?.hero?.title ?? 'Diseño interfaces',
-      subtitle: rawSettings?.hero?.subtitle ?? 'y las llevo a producción.',
+      greeting: rawSettings?.hero?.greeting ?? '¡Hola! Soy Lucas,',
+      title: rawSettings?.hero?.title ?? 'Frontend Developer',
+      subtitle: rawSettings?.hero?.subtitle ?? 'especializado en UI/UX.',
       lead: rawSettings?.hero?.lead ?? 'Frontend desde Ushuaia, con Astro, React y TypeScript. Me importa que se entienda a primera vista y que cargue rápido.',
       ctaLabel: rawSettings?.hero?.ctaLabel ?? 'Ver proyectos',
       secondaryLabel: rawSettings?.hero?.secondaryLabel ?? 'Mandame un mensaje',
     },
     seo: {
       title: rawSettings?.seo?.title ?? 'Home',
-      description: rawSettings?.seo?.description ?? 'Frontend Developer especializado en crear interfaces modernas, minimalistas y altamente performantes. Explora mis proyectos y descubre cómo trabajo.',
+      description: rawSettings?.seo?.description ?? 'Frontend developer especializado en UI/UX. Interfaces claras, rápidas y con detalle, dibujadas y programadas desde Ushuaia.',
     },
     about: {
       title: rawSettings?.about?.title ?? 'Sobre mí',
-      text: rawSettings?.about?.text ?? 'Soy Lucas, frontend developer. Cuido la jerarquía, el ritmo y los detalles de movimiento, y me animo con el backend cuando el proyecto lo pide.',
+      text: rawSettings?.about?.text ?? 'Soy Lucas, frontend developer. Cuido la jerarquía, el ritmo y los detalles de movimiento: que cada pantalla se entienda a primera vista y se sienta viva.',
       now: rawSettings?.about?.now?.length ? rawSettings.about.now : ['5to año de Licenciatura en Sistemas, UNTDF'],
       cvUrl: rawSettings?.about?.cvUrl ?? '/cv.pdf',
       cvLabel: rawSettings?.about?.cvLabel ?? 'Descargar CV',
     },
     contact: {
-      tagline: rawSettings?.contact?.tagline ?? 'El mensaje llegó. Ahora te toca a vos.',
-      description: rawSettings?.contact?.description ?? 'Si tenés un proyecto o una búsqueda, escribime y te respondo.',
+      tagline: rawSettings?.contact?.tagline ?? 'Mandame un avión.',
+      description: rawSettings?.contact?.description ?? '¿Tenés un proyecto o una búsqueda? Escribime y te respondo.',
       email: rawSettings?.contact?.email ?? 'lucasaraya19@hotmail.com',
       ctaLabel: rawSettings?.contact?.ctaLabel ?? 'Copiar mail',
     },

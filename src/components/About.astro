@@ -25,7 +25,7 @@ const items = import.meta.env.DEV && now.length < 2 ? [...now, '[lo que estés h
 
     {items.length > 0 && (
       <div class="mt-8 pt-5 border-t border-text-dark/20 w-full max-w-[60ch]">
-        <p class="text-[13px] tracking-[0.18em] uppercase text-text-dark/80 mb-2">Ahora mismo</p>
+        <p class="text-sm tracking-[0.18em] uppercase text-text-dark/80 mb-2">Ahora mismo</p>
         <ul class="flex flex-col gap-1 text-base md:text-lg text-text-dark/90">
           {items.map((item) => <li>{item}</li>)}
         </ul>

@@ -32,8 +32,8 @@ async function seed() {
       ctaLabel: 'Proyectos',
     },
     contact: {
-      tagline: 'Hagamos equipo',
-      description: 'Estoy con disponibilidad para sumarme a nuevos proyectos. Ya sea que tengas una idea en mente o simplemente quieras charlar sobre código o diseño, ¡escribime!',
+      tagline: 'Mandame un avión.',
+      description: '¿Tenés un proyecto o una búsqueda? Escribime y te respondo.',
       email: 'lucasaraya19@hotmail.com',
       ctaLabel: 'HABLEMOS',
     },

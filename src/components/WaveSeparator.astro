@@ -14,13 +14,14 @@ const path = position === 'top' ? pathTop : pathBottom;
 const containerClass = position === 'top' ? "wave-drift w-full rotate-180 -mb-1 relative z-0" : "wave-drift w-full -mt-1 relative z-0";
 ---
 
-<div class={containerClass}>
+<div class={containerClass} aria-hidden="true">
   <svg 
     viewBox="0 0 1440 120" 
     class={`w-full h-[6vw] min-h-[40px] block ${colorClass}`} 
     fill="currentColor" 
     preserveAspectRatio="none" 
     xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
   >
     <path d={path}></path>
   </svg>
