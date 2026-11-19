@@ -3,7 +3,7 @@
 > **Plan de resolución:** `.agents/plans/plan-pulido-final.md` (cubre todo este archivo, el bug del sobre y la estela móvil). Cada ítem queda hecho, descartado con motivo o derivado a Lucas.
 
 ## Para después (no entra en el commit del pulido final)
-- [ ] **Revisar el proyecto TheJudex** (carpeta `~/Proyectos/TheJudex`, en producción y con buenas prácticas avanzadas) para copiarle al portfolio lo que le falte, sobre todo SEO: datos estructurados, `llms.txt`, sitemaps, RSS, imágenes OG dinámicas, cabeceras de seguridad y CSP, accesibilidad y tests. Hacerlo con `dev-audit` o `dev-onboard` y llevar lo útil a un plan nuevo.
+- [x] **Revisar el proyecto TheJudex** (carpeta `~/Proyectos/TheJudex`, en producción y con buenas prácticas avanzadas) para copiarle al portfolio lo que le falte, sobre todo SEO: datos estructurados, `llms.txt`, sitemaps, RSS, imágenes OG dinámicas, cabeceras de seguridad y CSP, accesibilidad y tests. Hacerlo con `dev-audit` o `dev-onboard` y llevar lo útil a un plan nuevo. **→ hecho: `.agents/plans/plan-seo-csp-thejudex.md` (JSON-LD `@graph`, `llms.txt`, `robots.txt` dinámico, sitemap sin `/dibujos`, `noindex` en `/404`, CSP con nonce, `security.txt` y `check:seo`; descartados RSS y OG dinámica por YAGNI)**
 
 ## Pedidos de Lucas (2026-11-11)
 - [x] **P1 (bug)** Al llegar al fondo y volver a subir, sube un sobre en lugar del dibujo del avión: `deliver(false)` (`contact.ts`) sube el sobre y suelta el avión al mismo tiempo, sin plegar el sobre de nuevo en avión. (`harden`) **→ hecho: `hooks.refold`, tests `entrega-reversa*`**

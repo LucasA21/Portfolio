@@ -127,7 +127,7 @@ async function main() {
 </head>
 <body>
   <div class="left-col">
-    <div class="tagline">Frontend Developer</div>
+    <div class="tagline">Fullstack Developer</div>
     <div class="heading">Lucas Araya</div>
     <div class="subheading">especializado en UI/UX</div>
   </div>

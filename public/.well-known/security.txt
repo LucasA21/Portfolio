@@ -1,0 +1,4 @@
+Contact: mailto:lucasaraya19@hotmail.com
+Expires: 2027-11-19T00:00:00.000Z
+Preferred-Languages: es, en
+Canonical: https://lucasaraya.com.ar/.well-known/security.txt

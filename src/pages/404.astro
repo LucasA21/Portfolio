@@ -4,7 +4,7 @@ import Doodle from '../components/Doodle.astro';
 Astro.response.status = 404;
 ---
 
-<Layout title="Página no encontrada" description="La página que buscas no existe.">
+<Layout title="Página no encontrada" description="La página que buscas no existe." noindex={true}>
   <div class="max-w-3xl mx-auto px-6 min-h-svh flex flex-col items-center justify-center text-center gap-6 py-16">
     <div class="fade-up w-full max-w-[460px]">
       <Doodle name="notfound" class="w-full h-auto" />

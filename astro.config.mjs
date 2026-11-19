@@ -35,7 +35,7 @@ export default defineConfig({
     useCdn: false,
     studioBasePath: '/admin',
   }), sitemap({
-    filter: (page) => !page.includes('/admin')
+    filter: (page) => !page.includes('/admin') && !page.includes('/dibujos')
   })],
 
   adapter: vercel()

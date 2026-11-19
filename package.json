@@ -10,7 +10,12 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "check:motion": "node scripts/check-motion.mjs"
+    "check:motion": "node scripts/check-motion.mjs",
+    "check:seo": "node scripts/check-seo.mjs",
+    "sanity:setup-staging": "node scripts/sanity-sync.mjs setup-staging",
+    "sanity:diff": "node scripts/sanity-sync.mjs diff",
+    "sanity:apply-staging": "node scripts/sanity-sync.mjs apply-staging",
+    "sanity:promote": "node scripts/sanity-sync.mjs promote"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.4",
