@@ -64,7 +64,14 @@ export interface SiteData {
 
 // ─── Funciones de Fetching ───
 
+function ensureSanityConfig() {
+  if (!import.meta.env.PUBLIC_SANITY_PROJECT_ID) {
+    throw new Error('Missing PUBLIC_SANITY_PROJECT_ID environment variable');
+  }
+}
+
 export async function getSettings(): Promise<SiteSettings | null> {
+  ensureSanityConfig();
   return await sanityClient.fetch(SETTINGS_QUERY);
 }
 
@@ -83,6 +90,7 @@ export function shotSrcset(url?: string): string | undefined {
 
 /** A screenshot uploaded in Sanity wins; otherwise the capture made by scripts/screenshots.mjs, if there is one. */
 export async function getProjects(): Promise<Project[]> {
+  ensureSanityConfig();
   const projects: Project[] = await sanityClient.fetch(PROJECTS_QUERY);
   return projects.map((p) => {
     const local = (shots as Record<string, string>)[slug(p.title)];
@@ -103,34 +111,34 @@ export async function getSiteData(): Promise<SiteData> {
   const settings: SiteSettings = {
     hero: {
       greeting: rawSettings?.hero?.greeting ?? '¡Hola! Soy Lucas,',
-      title: rawSettings?.hero?.title ?? 'Frontend Developer',
+      title: rawSettings?.hero?.title ?? 'Fullstack Developer',
       subtitle: rawSettings?.hero?.subtitle ?? 'especializado en UI/UX.',
-      lead: rawSettings?.hero?.lead ?? 'Frontend desde Ushuaia, con Astro, React y TypeScript. Me importa que se entienda a primera vista y que cargue rápido.',
+      lead: rawSettings?.hero?.lead ?? 'Programador fullstack con foco en frontend y UI/UX (Astro, React y TypeScript). Me importa que cada producto se entienda a primera vista y cargue rápido.',
       ctaLabel: rawSettings?.hero?.ctaLabel ?? 'Ver proyectos',
       secondaryLabel: rawSettings?.hero?.secondaryLabel ?? 'Mandame un mensaje',
     },
     seo: {
       title: rawSettings?.seo?.title ?? 'Home',
-      description: rawSettings?.seo?.description ?? 'Frontend developer especializado en UI/UX. Interfaces claras, rápidas y con detalle, dibujadas y programadas desde Ushuaia.',
+      description: rawSettings?.seo?.description ?? 'Programador fullstack con foco en frontend y UI/UX. Interfaces claras, rápidas y productos web completos en Astro, React y TypeScript.',
     },
     about: {
       title: rawSettings?.about?.title ?? 'Sobre mí',
-      text: rawSettings?.about?.text ?? 'Soy Lucas, frontend developer. Cuido la jerarquía, el ritmo y los detalles de movimiento: que cada pantalla se entienda a primera vista y se sienta viva.',
-      now: rawSettings?.about?.now?.length ? rawSettings.about.now : ['5to año de Licenciatura en Sistemas, UNTDF'],
+      text: rawSettings?.about?.text ?? 'Desarrollo aplicaciones web fullstack, pero donde más disfruto meter mano es en el frontend y la interfaz: jerarquía clara, ritmo visual y animaciones que acompañen el uso sin estorbar.',
+      now: rawSettings?.about?.now?.length ? rawSettings.about.now : ['5to año de Licenciatura en Sistemas, UNTDF', 'Trabajando en proyectos personales'],
       cvUrl: rawSettings?.about?.cvUrl ?? '/cv.pdf',
       cvLabel: rawSettings?.about?.cvLabel ?? 'Descargar CV',
     },
     contact: {
       tagline: rawSettings?.contact?.tagline ?? 'Mandame un avión.',
-      description: rawSettings?.contact?.description ?? '¿Tenés un proyecto o una búsqueda? Escribime y te respondo.',
+      description: rawSettings?.contact?.description ?? 'Si tenés un proyecto en mente o estás buscando sumar gente a tu equipo, escribime y lo charlamos.',
       email: rawSettings?.contact?.email ?? 'lucasaraya19@hotmail.com',
       ctaLabel: rawSettings?.contact?.ctaLabel ?? 'Copiar mail',
     },
     footer: {
-      copyright: rawSettings?.footer?.copyright && !/all rights reserved/i.test(rawSettings.footer.copyright) ? rawSettings.footer.copyright : 'Lucas Araya. Dibujado y programado en Ushuaia.',
+      copyright: rawSettings?.footer?.copyright && !/all rights reserved/i.test(rawSettings.footer.copyright) ? rawSettings.footer.copyright : 'Lucas Araya. Dibujado y programado a mano.',
       navLinks: rawSettings?.footer?.navLinks ?? [
-        { _key: 'about', label: 'Sobre mí', href: '#about' },
         { _key: 'projects', label: 'Proyectos', href: '#projects' },
+        { _key: 'about', label: 'Sobre mí', href: '#about' },
         { _key: 'contact', label: 'Contacto', href: '#contact' },
       ],
     },

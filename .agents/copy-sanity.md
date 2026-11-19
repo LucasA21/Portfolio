@@ -1,34 +1,35 @@
-# Copy listo para pegar en Sanity (`/admin`, dataset `staging`)
+# Copy y sincronización de Sanity (`staging` → `production`)
 
-Posicionamiento: frontend especializado en UI/UX, sin mencionar backend. Plan B si Lucas lo prefiere: "fullstack especializado en UI/UX". Omitir no es negar: ningún texto afirma "solo frontend".
-Los mismos textos están como valores por defecto en `src/utils/sanity.ts`, `src/layouts/Layout.astro` y `src/sanity/seed.ts`; Sanity los pisa, así que hay que cargarlos allá. Nada de esto se escribió en Sanity desde el código (el dataset es compartido con producción).
+Posicionamiento definido por Lucas: **Fullstack Developer especializado en UI/UX** (mantiene perfil fullstack con foco fuerte en frontend, diseño de interfaz y rendimiento).
+Los mismos textos por defecto viven en `src/utils/sanity.ts` y `src/layouts/Layout.astro`.
 
-## Site Settings
+## Cómo trabajar sin cargar nada a mano en producción
+
+1. En `sanity.io/manage` → tu proyecto (`mi-portfolio`) → **API → Tokens → Add API token** (permiso **Editor**), copiá el token.
+2. En `.env` local agregá:
+   - `PUBLIC_SANITY_DATASET=staging`
+   - `SANITY_WRITE_TOKEN=<el token Editor>`
+3. Inicializá `staging` clonando `production` (y si tu token no crea datasets, crealo antes en **Datasets → Add dataset → `staging` (Public)**): `pnpm sanity:setup-staging`.
+4. Aplicá el copy nuevo, capturas claras, proyectos nuevos y borrado de PixDex en `staging`: `pnpm sanity:apply-staging`.
+5. Probá en local (`pnpm dev`), revisá `/admin` si querés ajustar algo, y compará contra producción con `pnpm sanity:diff`.
+6. Cuando todo convenza, promovelo a `production` sin cargar nada a mano: `pnpm sanity:promote -- --apply`.
+
+## Site Settings incluidos en `pnpm sanity:apply-staging`
 
 | Campo | Texto |
 |---|---|
 | `hero.greeting` | ¡Hola! Soy Lucas, |
-| `hero.title` (H1, se mantiene) | Frontend Developer |
-| `hero.subtitle` (H1, se mantiene) | especializado en UI/UX. |
-| `hero.lead` (se mantiene) | Frontend desde Ushuaia, con Astro, React y TypeScript. Me importa que se entienda a primera vista y que cargue rápido. |
-| `about.text` | Soy Lucas, frontend developer. Cuido la jerarquía, el ritmo y los detalles de movimiento: que cada pantalla se entienda a primera vista y se sienta viva. |
-| `seo.description` | Frontend developer especializado en UI/UX. Interfaces claras, rápidas y con detalle, dibujadas y programadas desde Ushuaia. |
+| `hero.title` | Fullstack Developer |
+| `hero.subtitle` | especializado en UI/UX. |
+| `hero.lead` | Programador fullstack con foco en frontend y UI/UX (Astro, React y TypeScript). Me importa que cada producto se entienda a primera vista y cargue rápido. |
+| `about.text` | Desarrollo aplicaciones web fullstack, pero donde más disfruto meter mano es en el frontend y la interfaz: jerarquía clara, ritmo visual y animaciones que acompañen el uso sin estorbar. |
+| `seo.description` | Programador fullstack con foco en frontend y UI/UX. Interfaces claras, rápidas y productos web completos en Astro, React y TypeScript. |
 | `contact.tagline` | Mandame un avión. |
-| `contact.description` | ¿Tenés un proyecto o una búsqueda? Escribime y te respondo. |
+| `contact.description` | Si tenés un proyecto en mente o estás buscando sumar gente a tu equipo, escribime y lo charlamos. |
+| `contact.ctaLabel` | Copiar mail |
+| `footer.copyright` | Lucas Araya. Dibujado y programado a mano. |
 
-## Proyecto TheJudex (destacado)
+## Proyectos (se mantienen fullstack destacando UI/UX)
 
-- `description`: Directorio B2B de software con miles de páginas indexables y un catálogo que carga sin JavaScript de cliente.
-- `tags`, en este orden (la card muestra los 3 primeros): Astro, TypeScript, Tailwind. Sacar PostgreSQL de la lista visible o dejarlo al final.
-- `highlights` (métricas): solo con números que Lucas confirme. Hechos que ya estaban en el copy y se pueden usar sin inventar: 0 KB de JavaScript de cliente en el catálogo, 5 idiomas (en, es, pt, de, fr), escala de 1.000 a más de 50.000 URLs, WCAG 2.2 AA.
-- `content` (cuerpo del modal): hoy cuenta pipeline en Python, PostgreSQL 16, Drizzle, Gemini y VPS. Para el posicionamiento, reescribirlo desde la interfaz con hechos que ya estaban:
-  - El problema: directorios de software lentos y repetitivos; quería uno que escalara de 1.000 a más de 50.000 URLs con contenido único por ficha.
-  - Qué hice: frontend en Astro 5 con 0 KB de JavaScript de cliente en el catálogo; 5 idiomas desde el día uno; SEO técnico (sitemaps, `llms.txt`, RSS, imágenes OG dinámicas, datos estructurados); accesibilidad WCAG 2.2 AA.
-  - Calidad: un chequeo automático que bloquea cualquier página de catálogo con JavaScript de cliente.
-
-## Pendiente de decidir (fuera del alcance del plan)
-
-- SyncLife dice "Full-stack con Next.js 16, Quarkus/Kotlin y gRPC" y Lumen/PixDex mencionan Supabase y Gemini. Si el posicionamiento va sin backend, conviene reescribirlos igual que TheJudex.
-- Mail propio (`hola@lucasaraya.com.ar` con reenvío gratuito) en `contact.email`.
-
-Al mergear a `main`: cargar lo mismo en `production`; el sitio en vivo muestra el copy viejo hasta entonces.
+- **TheJudex, Lumen, SyncLife, Tamara Vasak, PixDex:** conservan su stack fullstack completo; en `TheJudex` conviene completar en `/admin` (sobre `staging`) las métricas reales en `highlights` (ej.: `0 KB` JS en catálogo, `5` idiomas, `+50.000` URLs o Lighthouse `100`).
+- **Mail propio (opcional):** `hola@lucasaraya.com.ar` en `contact.email` cuando esté configurado el reenvío.
