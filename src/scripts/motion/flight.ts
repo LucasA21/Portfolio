@@ -13,7 +13,7 @@ type P = [number, number];
 type W = [number, number, number?]; // waypoint with an optional corner radius
 
 const TRAIL = 0.1; // visible trail: share of the route behind the plane
-const SCALE = 0.58; // plane drawing is 124 units wide: about 72 px on screen
+const SCALE = 0.48; // plane drawing is 124 units wide: about 60 px on screen, fits comfortably between card rows
 const SCALE_SMALL = 0.42; // about 52 px below 1024 px, small enough to fit the gaps between stacked cards
 const FRAMES = ['unfold-1', 'unfold-2', 'sheet', 'fold-1', 'fold-2'];
 
@@ -482,8 +482,8 @@ export function initFlight({ reduce }: MotionContext) {
         st.lock = false;
         render();
         // the farther the scroll position, the longer the catch-up, so the plane never darts across the page
-        const duration = Math.min(0.8, Math.max(0.25, Math.hypot(target.x - from.x, target.y - from.y) / 1600));
-        unfolding = gsap.to(st, { blend: 1, duration, ease: 'power2.inOut', onUpdate: render });
+        const duration = Math.min(1.4, Math.max(0.4, Math.hypot(target.x - from.x, target.y - from.y) / 800));
+        unfolding = gsap.to(st, { blend: 1, duration, ease: 'power1.inOut', onUpdate: render });
       });
     } else {
       clearTrail();

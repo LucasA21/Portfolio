@@ -9,27 +9,31 @@ import WaveSeparator from '../components/WaveSeparator.astro';
 import ContactSection from '../components/ContactSection.astro';
 import Footer from '../components/Footer.astro';
 import { getSiteData } from '../utils/sanity';
+import { buildPortfolioGraph, DEFAULT_SITE_URL } from '../utils/seo';
 
 const { settings, projects } = await getSiteData();
 const { hero, seo, about, contact, footer, socialLinks } = settings;
+const jsonLd = buildPortfolioGraph(settings, projects, DEFAULT_SITE_URL, seo?.description);
 ---
 
-<Layout title={seo?.title} description={seo?.description}>
+<Layout title={seo?.title} description={seo?.description} jsonLd={jsonLd}>
   <InkThread />
   
-  <div class="max-w-5xl mx-auto px-6 pt-10">
+  <div class="max-w-5xl mx-auto px-3 pt-3 md:px-6 md:pt-10">
     <div class="hero-animate-1">
       <Header socialLinks={socialLinks} />
     </div>
-  
-    <Hero
-      greeting={hero?.greeting!}
-      title={hero?.title!}
-      subtitle={hero?.subtitle!}
-      lead={hero?.lead!}
-      ctaLabel={hero?.ctaLabel!}
-      secondaryLabel={hero?.secondaryLabel!}
-    />
+
+    <div class="px-3 md:px-0">
+      <Hero
+        greeting={hero?.greeting!}
+        title={hero?.title!}
+        subtitle={hero?.subtitle!}
+        lead={hero?.lead!}
+        ctaLabel={hero?.ctaLabel!}
+        secondaryLabel={hero?.secondaryLabel!}
+      />
+    </div>
   </div> 
 
   <WaveSeparator position="top" />

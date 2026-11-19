@@ -6,24 +6,35 @@ import font400 from "@fontsource/halant/files/halant-latin-400-normal.woff2?url"
 import font500 from "@fontsource/halant/files/halant-latin-500-normal.woff2?url";
 import font600 from "@fontsource/halant/files/halant-latin-600-normal.woff2?url";
 import font700 from "@fontsource/halant/files/halant-latin-700-normal.woff2?url";
+import { SIGNATURE_VARIANT } from "../config/site";
+import { buildPortfolioGraph, safeJsonLdStringify } from "../utils/seo";
 
 interface Props {
   title?: string;
   description?: string;
+  noindex?: boolean;
+  jsonLd?: Record<string, unknown>;
 }
 
 const { 
   title, 
-  description = "Frontend developer especializado en UI/UX. Interfaces claras, rápidas y con detalle, dibujadas y programadas desde Ushuaia." 
+  description = "Programador fullstack con foco en frontend y UI/UX. Interfaces claras, rápidas y productos web completos en Astro, React y TypeScript.",
+  noindex = false,
+  jsonLd,
 } = Astro.props;
 
-const baseTitle = "Lucas Araya | Frontend Developer";
+const baseTitle = "Lucas Araya | Fullstack Developer";
 const optimizedTitle = title === "Home" || !title || title.includes("Lucas Araya") 
   ? baseTitle 
   : `${title} | ${baseTitle}`;
 
 const canonicalURL = new URL(Astro.url.pathname, "https://lucasaraya.com.ar");
 const socialImageURL = new URL("/og-image.png", "https://lucasaraya.com.ar");
+const robotsContent = noindex
+  ? "noindex, nofollow"
+  : "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1";
+const structuredData =
+  jsonLd ?? buildPortfolioGraph({}, [], "https://lucasaraya.com.ar", description);
 ---
 
 <!doctype html>
@@ -38,6 +49,20 @@ const socialImageURL = new URL("/og-image.png", "https://lucasaraya.com.ar");
     <link rel="preload" href={font500} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={font600} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={font700} as="font" type="font/woff2" crossorigin />
+    {SIGNATURE_VARIANT === 'marker' && (
+      <>
+        <link rel="preload" href="/fonts/reenie-beanie-lucas.woff2" as="font" type="font/woff2" crossorigin />
+        <style is:inline>
+          @font-face {
+            font-family: 'Reenie Beanie';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url(/fonts/reenie-beanie-lucas.woff2) format('woff2');
+          }
+        </style>
+      </>
+    )}
     
     <title>{optimizedTitle}</title>
     <meta name="description" content={description} />
@@ -45,33 +70,24 @@ const socialImageURL = new URL("/og-image.png", "https://lucasaraya.com.ar");
     
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#F6F5F1" />
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content={robotsContent} />
     
-    <link rel="canonical" href={canonicalURL} />
+    {!noindex && <link rel="canonical" href={canonicalURL} />}
 
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Lucas Araya | Frontend Developer" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:site_name" content="Lucas Araya | Fullstack Developer" />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={optimizedTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={socialImageURL} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Lucas Araya, Fullstack Developer especializado en UI/UX" />
 
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Person",
-      "name": "Lucas Araya",
-      "jobTitle": "Frontend Developer",
-      "url": canonicalURL,
-      "image": socialImageURL,
-      "description": description,
-      "sameAs": [
-        "https://github.com/LucasA21",
-        "https://www.linkedin.com/in/lucasaraya",
-        "https://www.instagram.com/_lucasaraya/"
-      ]
-    })} />
+    {!noindex && (
+      <script is:inline type="application/ld+json" set:html={safeJsonLdStringify(structuredData)} />
+    )}
 
     <!-- Twitter (X) -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -99,9 +115,9 @@ const socialImageURL = new URL("/og-image.png", "https://lucasaraya.com.ar");
       }
     </style>
   </head>
-  <body>
-    <a href="#projects" class="skip-link">Saltar al contenido</a>
-    <main class="w-full overflow-hidden relative">
+  <body id="top">
+    <a href="#main-content" class="skip-link">Saltar al contenido</a>
+    <main id="main-content" tabindex="-1" class="w-full overflow-x-clip relative focus:outline-none">
       <slot />
     </main>
     <script>

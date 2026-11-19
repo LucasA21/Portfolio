@@ -1,0 +1,57 @@
+---
+import { SIGNATURE_VARIANT, type SignatureVariant } from '../config/site';
+
+interface Props {
+  variant?: SignatureVariant;
+  href?: string;
+  class?: string;
+}
+
+const {
+  variant = SIGNATURE_VARIANT,
+  href = '#top',
+  class: className = '',
+} = Astro.props;
+
+const isMarker = variant === 'marker';
+---
+
+<a
+  href={href}
+  data-signature-variant={variant}
+  class:list={[
+    'relative inline-block leading-none text-accent-brown no-underline whitespace-nowrap select-none',
+    isMarker
+      ? "font-['Reenie_Beanie',cursive] text-[28px] md:text-[32px] isolate"
+      : 'font-hand text-[22px] md:text-[26px]',
+    className,
+  ]}
+>
+  Lucas Araya
+  {isMarker ? (
+    <svg
+      class="pointer-events-none absolute -left-[5px] md:-left-[6px] top-[45%] w-[calc(100%+10px)] md:w-[calc(100%+12px)] h-[50%] -z-10"
+      viewBox="0 0 170 16"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path d="M2 4 C40 1 120 2 168 3 L166 14 C120 16 50 16 4 13 Z" fill="var(--color-accent-warm)" fill-opacity="0.2" />
+    </svg>
+  ) : (
+    <svg
+      class="pointer-events-none absolute left-0 -bottom-[7px] md:-bottom-[8px] w-full h-[7px] md:h-[8px]"
+      viewBox="0 0 170 12"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M3 8 C40 3 95 2 150 5 C158 5.5 164 6.5 160 9"
+        fill="none"
+        stroke="var(--color-accent-warm)"
+        stroke-width="2"
+        stroke-linecap="round"
+        vector-effect="non-scaling-stroke"
+      />
+    </svg>
+  )}
+</a>

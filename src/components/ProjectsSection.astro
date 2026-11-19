@@ -18,12 +18,12 @@ const rest = projects.filter((p) => p !== featured);
   <section id="projects" class="max-w-5xl mx-auto px-6 scroll-mt-[22vh] relative z-10">
     <div class="flex flex-col md:flex-row md:items-baseline md:justify-start md:gap-6 gap-1 mb-10 text-center md:text-left">
       <h2 class="text-3xl md:text-4xl font-medium tracking-wider text-accent-brown">Proyectos</h2>
-      <p class="font-hand text-accent-warm text-xl md:-rotate-1">uno en producción, los demás para aprender</p>
+      <p class="font-hand text-accent-warm text-xl md:-rotate-1">en producción y proyectos propios</p>
     </div>
 
     {featured && <FeaturedProject project={featured} />}
 
-    <div id="projects-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger-group">
+    <div id="projects-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-14 stagger-group">
       {rest.map((project) => (
         <ProjectCard
           id={project._id}
@@ -47,7 +47,7 @@ const rest = projects.filter((p) => p !== featured);
         id="projects-more"
         aria-expanded="false"
         aria-controls="projects-container"
-        class="inline-flex items-center gap-3 bg-glass-card border border-stroke px-8 py-3.5 rounded-full text-base font-medium text-accent-brown hover:shadow-lg active:scale-95 transition-all duration-300 cursor-pointer"
+        class="inline-flex items-center gap-3 bg-main-bg border border-accent-brown/55 px-8 py-3.5 rounded-full text-base font-medium text-accent-brown hover:shadow-lg active:scale-95 transition-all duration-300 cursor-pointer"
       >
         <span id="projects-more-label">Ver más proyectos</span>
         <svg id="projects-more-arrow" class="w-4 h-4 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
@@ -60,19 +60,18 @@ const rest = projects.filter((p) => p !== featured);
 
 <script>
   function setupProjects() {
-    // "Ver más": first batch is one row (1 col: 3, 2 cols: 4, 3 cols: 3).
+    // "Ver más": up to 6 cards on desktop (>= 1024px), 4 cards on mobile/tablet.
     const grid = document.getElementById('projects-container');
     const moreWrap = document.getElementById('projects-more-wrap');
     const moreBtn = document.getElementById('projects-more');
     if (grid && moreWrap && moreBtn) {
       const cards = [...grid.querySelectorAll<HTMLElement>('.project-card')];
       let expanded = false;
-      const limit = () => (matchMedia('(min-width: 1024px)').matches ? 3 : matchMedia('(min-width: 768px)').matches ? 4 : 3);
+      const limit = () => (matchMedia('(min-width: 1024px)').matches ? 6 : 4);
       const label = document.getElementById('projects-more-label')!;
       const arrow = document.getElementById('projects-more-arrow')!;
       const apply = () => {
-        // Below 1024 px a button that hides a single card is not worth the extra tap: show it. Desktop keeps one row.
-        const base = limit(), n = cards.length - base === 1 && !matchMedia('(min-width: 1024px)').matches ? cards.length : base;
+        const base = limit(), n = cards.length - base === 1 ? cards.length : base;
         cards.forEach((c, i) => {
           const show = expanded || i < n;
           c.classList.toggle('hidden', !show);
@@ -88,7 +87,10 @@ const rest = projects.filter((p) => p !== featured);
       moreBtn.addEventListener('click', () => {
         expanded = !expanded;
         apply();
-        if (!expanded) document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
+        if (!expanded) {
+          const behavior = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+          document.getElementById('projects')?.scrollIntoView({ behavior });
+        }
       });
       matchMedia('(min-width: 768px)').addEventListener('change', apply);
       matchMedia('(min-width: 1024px)').addEventListener('change', apply);
@@ -154,12 +156,14 @@ const rest = projects.filter((p) => p !== featured);
             lightboxImg.src = modalImages[index];
             if (lightboxCounter) {
                 lightboxCounter.textContent = `${index + 1} / ${modalImages.length}`;
+                lightboxCounter.classList.toggle('hidden', modalImages.length <= 1);
             }
         }
         updateModalImage(index); // Sync modal carousel
     }
 
     function openLightbox() {
+        if (modalImages.length === 0) return;
         updateLightboxImage(currentImgIndex);
         lightbox.showModal();
         stopAutoplay();
@@ -217,12 +221,14 @@ const rest = projects.filter((p) => p !== featured);
         }
 
         dots.forEach((dot, i) => {
+            const pill = dot.querySelector('.modal-dot-pill');
+            if (!pill) return;
             if (i === index) {
-                dot.classList.add('bg-white', 'w-6');
-                dot.classList.remove('bg-white/40', 'w-2');
+                pill.classList.add('bg-accent-brown', 'w-6');
+                pill.classList.remove('bg-accent-brown/35', 'w-2');
             } else {
-                dot.classList.remove('bg-white', 'w-6');
-                dot.classList.add('bg-white/40', 'w-2');
+                pill.classList.remove('bg-accent-brown', 'w-6');
+                pill.classList.add('bg-accent-brown/35', 'w-2');
             }
         });
         currentImgIndex = index;
@@ -230,37 +236,60 @@ const rest = projects.filter((p) => p !== featured);
 
     cards.forEach(card => {
         card.addEventListener('click', (e) => {
-            if ((e.target as Element).closest('a')) return; // "Ver el sitio" navigates, it does not open the modal
+            if ((e.target as Element).closest('a')) return; // "Ver sitio" navigates, it does not open the modal
             const data = JSON.parse(card.getAttribute('data-project') || '{}');
-            modalImages = data.mainImage ? [data.mainImage, ...(data.gallery || [])] : (data.gallery || []);
+            const gallery = Array.isArray(data.gallery) ? data.gallery.filter(Boolean) : [];
+            const fallbackShot = data.mainImage || data.screenshot;
+            modalImages = fallbackShot ? [fallbackShot, ...gallery.filter((g: string) => g !== fallbackShot)] : gallery;
             currentImgIndex = 0;
+
+            const carouselWrap = document.getElementById('modal-carousel-wrap');
+            const detailsScroll = document.getElementById('modal-details-scroll');
+            if (carouselWrap) carouselWrap.classList.toggle('hidden', modalImages.length === 0);
 
             // Preload gallery images
             preloadImages(modalImages);
             
             // Inyectar texto
             const titleEl = document.getElementById('modal-title');
+            const leadEl = document.getElementById('modal-lead');
             const descEl = document.getElementById('modal-description');
             const tagsEl = document.getElementById('modal-tags');
             const linkEl = document.getElementById('modal-link') as HTMLAnchorElement;
+            const linkWrap = document.getElementById('modal-link-wrap');
             const dotsContainer = document.getElementById('modal-dots-container');
+            const lightboxControls = document.getElementById('lightbox-controls');
+            const lightboxPrev = document.getElementById('lightbox-prev');
+            const lightboxNext = document.getElementById('lightbox-next');
+            const lightboxSwipeHint = document.getElementById('lightbox-swipe-hint');
 
             if (titleEl) titleEl.textContent = data.title;
+            if (leadEl) {
+                const showLead = Boolean(data.description && data.contentHtml && data.contentHtml !== data.description);
+                leadEl.textContent = showLead ? data.description : '';
+                leadEl.classList.toggle('hidden', !showLead);
+            }
             if (descEl) descEl.textContent = ""; // Clear existing
             if (descEl) descEl.innerHTML = data.contentHtml || data.description;
             
-            if (linkEl) {
-                if (data.link) {
+            const hasLiveLink = Boolean(data.link && /^https?:\/\//i.test(data.link));
+            if (linkEl && linkWrap) {
+                if (hasLiveLink) {
                     linkEl.href = data.link;
-                    linkEl.parentElement?.classList.remove('hidden');
+                    linkWrap.classList.remove('hidden');
                 } else {
-                    linkEl.parentElement?.classList.add('hidden');
+                    linkEl.removeAttribute('href');
+                    linkWrap.classList.add('hidden');
                 }
+            }
+            if (detailsScroll) {
+                detailsScroll.classList.toggle('pb-28', hasLiveLink);
+                detailsScroll.classList.toggle('pb-10', !hasLiveLink);
             }
 
             if (tagsEl) {
                 tagsEl.innerHTML = (data.tags || []).map((tag: string) => `
-                    <span class="text-[11px] px-3 py-1 rounded-full border border-accent-brown/20 bg-accent-brown/5 text-accent-brown/60 tracking-wider font-bold">
+                    <span class="text-xs px-3 py-1 rounded-full border border-accent-brown/25 bg-wave-bg/70 text-accent-brown/90 tracking-wide font-medium">
                         ${tag}
                     </span>
                 `).join('');
@@ -268,23 +297,31 @@ const rest = projects.filter((p) => p !== featured);
 
             // Inyectar Puntos
             if (dotsContainer) {
+                dotsContainer.classList.toggle('hidden', modalImages.length <= 1);
                 dotsContainer.innerHTML = modalImages.map((_, i) => `
-                    <button class="modal-dot h-2 rounded-full transition-all duration-300 ${i === 0 ? 'bg-white w-6' : 'bg-white/40 w-2'}" data-index="${i}" aria-label="Ver imagen ${i + 1} de ${modalImages.length}"></button>
+                    <button type="button" class="modal-dot inline-flex items-center justify-center min-w-7 min-h-7 px-1 cursor-pointer" data-index="${i}" aria-label="Ver imagen ${i + 1} de ${modalImages.length}"><span class="modal-dot-pill h-2 rounded-full transition-all duration-300 shadow-sm ${i === 0 ? 'bg-accent-brown w-6' : 'bg-accent-brown/35 w-2'}"></span></button>
                 `).join('');
                 
                 dotsContainer.querySelectorAll('.modal-dot').forEach(dot => {
-                    dot.addEventListener('click', () => {
+                    dot.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
                         updateModalImage(parseInt(dot.getAttribute('data-index') || '0'));
                         startAutoplay(); // Reset timer
                     });
                 });
             }
 
+            const hasMultiple = modalImages.length > 1;
+            lightboxControls?.classList.toggle('hidden', modalImages.length === 0);
+            lightboxPrev?.classList.toggle('hidden', !hasMultiple);
+            lightboxNext?.classList.toggle('hidden', !hasMultiple);
+            lightboxSwipeHint?.classList.toggle('hidden', !hasMultiple);
+
             // Resetear imagen principal
             const mainImgEl = document.getElementById('modal-main-image') as HTMLImageElement;
-            if (mainImgEl && modalImages[0]) {
-                mainImgEl.src = modalImages[0];
-                mainImgEl.style.opacity = '1';
+            if (mainImgEl) {
+                mainImgEl.src = modalImages[0] || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                mainImgEl.style.opacity = modalImages[0] ? '1' : '0';
                 mainImgEl.style.transform = 'scale(1)';
             }
 
@@ -349,9 +386,13 @@ const rest = projects.filter((p) => p !== featured);
         }
     );
 
+    lightbox.addEventListener('cancel', () => {
+        startAutoplay();
+    });
+
     // Teclado para Lightbox
     document.addEventListener('keydown', (e) => {
-        if (lightbox.open) {
+        if (lightbox.open && modalImages.length > 0) {
             if (e.key === 'ArrowRight') updateLightboxImage((currentImgIndex + 1) % modalImages.length);
             if (e.key === 'ArrowLeft') updateLightboxImage((currentImgIndex - 1 + modalImages.length) % modalImages.length);
             if (e.key === 'Escape') {

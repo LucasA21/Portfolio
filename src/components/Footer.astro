@@ -20,19 +20,20 @@ const { footer, githubUrl, cvUrl } = Astro.props;
 const year = new Date().getFullYear();
 ---
 
-<footer class="mt-20 border-t border-accent-brown/15 pt-10 pb-16">
-  <div class="flex flex-col md:flex-row justify-between items-center gap-6 text-sm opacity-90 tracking-wider">
+<footer class="mt-20 border-t border-accent-brown/20 pt-10 pb-16">
+  <div class="flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-text-dark/90 tracking-wider">
     <p>
       &copy; {year} {footer.copyright}
     </p>
     
     <div class="flex items-center gap-8">
       {githubUrl && (
-        <a href={githubUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center min-h-11 hover:text-accent-brown hover:opacity-100 hover:scale-105 active:scale-95 transition-all">GitHub</a>
+        <a href={githubUrl} target="_blank" rel="noopener noreferrer" class="inline-flex items-center min-h-11 hover:text-accent-brown hover:scale-105 active:scale-95 transition-all">GitHub</a>
       )}
       {cvUrl && (
-        <a href={cvUrl} download class="inline-flex items-center min-h-11 hover:text-accent-brown hover:opacity-100 hover:scale-105 active:scale-95 transition-all">Descargar CV</a>
+        <a href={cvUrl} download class="inline-flex items-center min-h-11 hover:text-accent-brown hover:scale-105 active:scale-95 transition-all">Descargar CV</a>
       )}
+      <a href="#top" class="inline-flex items-center min-h-11 hover:text-accent-brown hover:scale-105 active:scale-95 transition-all">Subir</a>
     </div>
   </div>
 </footer>

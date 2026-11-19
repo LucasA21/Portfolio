@@ -42,28 +42,39 @@ export function initContact({ reduce }: MotionContext) {
       scene.setAttribute('data-delivered', 'true');
       closing(true);
     }, onReverseComplete: () => {
+      post.pause(0);
+      gsap.set(envelope, { opacity: 0 });
       scene.setAttribute('data-delivered', 'false');
       hooks.refold?.();
     },
   });
   post
-    .set(envelope, { opacity: 1 })
-    .to(envelope, { y: +(envelope as SVGElement).dataset.slide!, duration: 0.7, ease: 'power2.in' }, '+=0.15')
+    .set(envelope, { opacity: 0 }, 0)
+    .set(envelope, { opacity: 1 }, 0.01)
+    .to(envelope, { y: +(envelope as SVGElement).dataset.slide!, duration: 0.7, ease: 'power2.in' }, 0.08)
     .set(envelope, { opacity: 0 });
   if (flag) post.to(flag, { rotation: 0, duration: 0.6, ease: 'back.out(3)' }, '+=0.05');
   const head = $(scene, '[data-part="head"]');
   if (head) post.to(head, { rotation: 2, svgOrigin: (head as SVGElement).dataset.origin, duration: 0.4, yoyo: true, repeat: 1, ease: 'sine.inOut' }, '<');
   deliver = (on) => {
     if (on) {
-      post.timeScale(1);
-      // Envelope still on its way out: let it slide back in. Otherwise the plane unfolds again first.
-      if (post.progress() > 0 || !hooks.unfold) post.play();
-      else hooks.unfold(() => post.play());
+      // Envelope still on its way out: finish sliding it in without starting a parallel unfold.
+      if (post.progress() > 0 || !hooks.unfold) {
+        hooks.reset?.();
+        gsap.set('[data-plane]', { opacity: 0 });
+        post.timeScale(1).play();
+      } else {
+        gsap.set(envelope, { opacity: 0 });
+        hooks.unfold(() => post.timeScale(1).play(0));
+      }
     } else if (post.progress() > 0) {
       closing(false);
       // The envelope leaves the slot (four times as fast: the plane must not lag behind the scroll), then the flight folds it back into the plane.
       post.timeScale(4).reverse();
-    } else hooks.reset?.(); // delivery had not reached the slot yet: just put the plane back
+    } else {
+      gsap.set(envelope, { opacity: 0 });
+      hooks.reset?.(); // delivery had not reached the slot yet: just put the plane back
+    }
   };
 
   // The draw-in is built when the scene is one screen away: DrawSVG measures every stroke, which is not free.

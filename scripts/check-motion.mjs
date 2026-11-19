@@ -511,6 +511,30 @@ await test('entrega-reversa-mobile', async () => {
   await p.close();
 });
 
+await test('entrega-sin-duplicado', async () => {
+  const p = await page();
+  await p.evaluate(() => {
+    const g = document.querySelector('[data-plane]');
+    const env = [...document.querySelectorAll('[data-scene="contact"]')].find((e) => e.getBoundingClientRect().width > 0).querySelector('[data-envelope]');
+    window.__dup = [];
+    setInterval(() => window.__dup.push({
+      env: +env.style.opacity > 0,
+      plane: +g.style.opacity > 0,
+      frame: [...g.querySelectorAll('[data-frame]')].find((f) => f.style.display !== 'none')?.dataset.frame,
+    }), 30);
+  });
+  const max = await p.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+  await p.evaluate((y) => scrollTo(0, y), max);
+  await sleep(3200);
+  await p.evaluate((y) => scrollTo(0, y - 500), max);
+  await sleep(600);
+  await p.evaluate((y) => scrollTo(0, y), max);
+  await sleep(2200);
+  const both = await p.evaluate(() => window.__dup.filter((s) => s.env && s.plane));
+  assert(both.length === 0, `envelope and plane visible together ${both.length} times: ${JSON.stringify(both.slice(0, 3))}`);
+  await p.close();
+});
+
 await test('contacto-cierre', async () => {
   const p = await page();
   const cls = () => p.evaluate(() => ({ done: document.getElementById('contact').classList.contains('is-delivered'), wait: document.getElementById('contact').classList.contains('mail-wait'), line: getComputedStyle(document.querySelector('#contact .mail-link'), '::after').transform }));
@@ -637,6 +661,35 @@ await test('contacto-mobile', async () => {
     return { motion: s.dataset.motion, delivered: s.dataset.delivered, hand: !!s.querySelector('[data-part="hand"]') };
   });
   assert(r.hand && r.motion === 'running' && r.delivered === 'true', JSON.stringify(r));
+  await p.close();
+});
+
+await test('mobile-menu', async () => {
+  const p = await page({ viewport: { width: 390, height: 844 }, isMobile: true });
+  const openBtn = p.locator('#mobile-menu-open');
+  const closeBtn = p.locator('#mobile-menu-close');
+  const menu = p.locator('#mobile-menu');
+  assert((await openBtn.getAttribute('aria-expanded')) === 'false', 'expected initial aria-expanded=false');
+  assert(!(await menu.evaluate((el) => el.open)), 'menu should start closed');
+
+  await openBtn.click();
+  assert(await menu.evaluate((el) => el.open), 'menu should open on click');
+  assert((await openBtn.getAttribute('aria-expanded')) === 'true', 'expected aria-expanded=true when open');
+  assert((await p.evaluate(() => document.body.style.overflow)) === 'hidden', 'expected body scroll locked');
+
+  await p.keyboard.press('Escape');
+  assert(!(await menu.evaluate((el) => el.open)), 'Escape should close menu');
+  assert((await openBtn.getAttribute('aria-expanded')) === 'false', 'Escape should reset aria-expanded=false');
+  assert((await p.evaluate(() => document.body.style.overflow)) === '', 'Escape should unlock body scroll');
+
+  await openBtn.click();
+  await closeBtn.click();
+  assert(!(await menu.evaluate((el) => el.open)), 'close button should close menu');
+
+  await openBtn.click();
+  await p.locator('.mobile-nav-link').first().click();
+  assert(!(await menu.evaluate((el) => el.open)), 'nav link click should close menu');
+  assert((await p.evaluate(() => document.body.style.overflow)) === '', 'nav link should unlock body scroll');
   await p.close();
 });
 

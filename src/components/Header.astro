@@ -1,11 +1,6 @@
 ---
-import { Icon } from "astro-icon/components";
-
-interface SocialLink {
-  _key: string;
-  platform: string;
-  url: string;
-}
+import Signature from './Signature.astro';
+import SocialLinks, { type SocialLink } from './SocialLinks.astro';
 
 interface Props {
   socialLinks?: SocialLink[];
@@ -13,44 +8,76 @@ interface Props {
 
 const { socialLinks = [] } = Astro.props;
 
-// Mapeo de plataforma a ícono de astro-icon
-const iconMap: Record<string, string> = {
-  linkedin: 'simple-icons:linkedin',
-  github: 'simple-icons:github',
-  instagram: 'simple-icons:instagram',
-  gmail: 'simple-icons:gmail',
-  twitter: 'simple-icons:x',
-};
+const navItems = [
+  { href: '#projects', label: 'Proyectos' },
+  { href: '#about', label: 'Sobre mí' },
+  { href: '#contact', label: 'Contacto' },
+];
 ---
 
 <header
-  class="flex flex-col items-center bg-glass-card backdrop-blur-md border border-stroke rounded-3xl md:rounded-full px-6 md:px-10 py-1.5 md:grid md:grid-cols-[1fr_auto_1fr]"
+  class="flex items-center justify-between h-14 md:h-auto pl-5 pr-1.5 md:px-10 md:py-1.5 bg-glass-card backdrop-blur-md border border-stroke rounded-full md:grid md:grid-cols-[1fr_auto_1fr]"
 >
-  <div class="header-name hidden md:flex flex-row items-center gap-2 leading-none tracking-wider text-2xl font-medium text-accent-brown cursor-default">
-    <span>Lucas</span>
-    <span>Araya</span>
-  </div>
+  <Signature class="md:justify-self-start" />
 
-  <nav aria-label="Secciones" class="flex gap-4 sm:gap-6 md:gap-8 items-center justify-self-center text-sm md:text-base tracking-wider whitespace-nowrap">
-    <a href="#about" class="nav-link">Sobre mí</a>
-    <a href="#projects" class="nav-link">Proyectos</a>
-    <a href="#contact" class="nav-link">Contacto</a>
-  </nav>
-
-  <nav aria-label="Redes" class="flex gap-0 sm:gap-2 items-center justify-self-end">
-    {socialLinks.map((social) => (
-      <a
-        href={social.url}
-        target={social.url.startsWith('mailto:') ? undefined : '_blank'}
-        rel={social.url.startsWith('mailto:') ? undefined : 'noopener noreferrer'}
-        class="inline-flex items-center justify-center size-11 text-accent-brown hover:-translate-y-1 hover:opacity-70 transition-all"
-        aria-label={social.platform}
-      >
-        <Icon name={iconMap[social.platform] ?? 'lucide:link'} size={20} />
-      </a>
+  <nav aria-label="Secciones" class="hidden md:flex gap-8 items-center justify-self-center text-base tracking-wider whitespace-nowrap">
+    {navItems.map((item) => (
+      <a href={item.href} class="nav-link">{item.label}</a>
     ))}
   </nav>
+
+  <SocialLinks socialLinks={socialLinks} class="hidden md:flex justify-self-end" />
+
+  <button
+    id="mobile-menu-open"
+    type="button"
+    class="md:hidden inline-flex items-center justify-center size-11 rounded-full text-accent-brown cursor-pointer"
+    aria-label="Abrir menú"
+    aria-expanded="false"
+    aria-controls="mobile-menu"
+  >
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+      <line x1="4" y1="8" x2="20" y2="8" />
+      <line x1="8" y1="16" x2="20" y2="16" />
+    </svg>
+  </button>
 </header>
+
+<dialog
+  id="mobile-menu"
+  aria-label="Menú de navegación"
+  class="md:hidden fixed inset-0 w-screen h-dvh max-w-none max-h-none m-0 p-3 bg-main-bg border-none"
+>
+  <div class="mobile-menu-panel flex flex-col w-full h-full">
+    <div class="h-14 pl-5 pr-1.5 bg-glass-card border border-stroke rounded-full flex items-center justify-between shrink-0">
+      <Signature href="#top" />
+      <button
+        id="mobile-menu-close"
+        type="button"
+        class="inline-flex items-center justify-center size-11 rounded-full text-accent-brown cursor-pointer"
+        aria-label="Cerrar menú"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <line x1="6" y1="6" x2="18" y2="18" />
+          <line x1="18" y1="6" x2="6" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <nav aria-label="Principal" class="px-5 pt-12 flex flex-col gap-2">
+      {navItems.map((item) => (
+        <a href={item.href} class="mobile-nav-link text-[34px] leading-tight text-text-dark py-1.5 no-underline">
+          {item.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="mt-auto px-5 pb-7 flex flex-col gap-4">
+      <p class="font-hand text-[17px] text-accent-warm">También estoy en</p>
+      <SocialLinks socialLinks={socialLinks} label="Redes sociales" variant="circle" />
+    </div>
+  </div>
+</dialog>
 
 <style>
   .nav-link {
@@ -76,7 +103,7 @@ const iconMap: Record<string, string> = {
   }
   .nav-link:hover,
   .nav-link:focus-visible,
-  .nav-link[aria-current="true"] {
+  .nav-link[aria-current="page"] {
     color: var(--color-accent-brown);
   }
   .nav-link:hover {
@@ -84,34 +111,97 @@ const iconMap: Record<string, string> = {
   }
   .nav-link:hover::after,
   .nav-link:focus-visible::after,
-  .nav-link[aria-current="true"]::after {
+  .nav-link[aria-current="page"]::after {
     transform: scaleX(1);
     transform-origin: left;
   }
-  .header-name {
-    transition: transform 0.3s ease;
+
+  #mobile-menu[open] {
+    display: flex;
+  }
+  .mobile-nav-link[aria-current="page"] {
+    color: var(--color-accent-brown);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .mobile-nav-link[aria-current="page"]::after {
+    content: "";
+    width: 28px;
+    height: 2px;
+    background: var(--color-accent-brown);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    #mobile-menu[open] .mobile-menu-panel {
+      animation: mobile-menu-in 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+  }
+  @keyframes mobile-menu-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
 
 <script>
-  // Marks the nav link of the section in view.
-  function setupNavSpy() {
-    const links = [...document.querySelectorAll<HTMLAnchorElement>('.nav-link')];
-    const targets = links.map((l) => document.querySelector(l.getAttribute('href')!));
-    const io = new IntersectionObserver(
+  let headerIo: IntersectionObserver | null = null;
+
+  function setupHeader() {
+    // Marks the active section across desktop and mobile navigation links.
+    headerIo?.disconnect();
+    const navLinks = [...document.querySelectorAll<HTMLAnchorElement>('.nav-link, .mobile-nav-link')];
+    const uniqueHrefs = [...new Set(navLinks.map((l) => l.getAttribute('href')!))];
+    const targets = new Map(uniqueHrefs.map((href) => [href, document.querySelector(href)]));
+
+    headerIo = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (!e.isIntersecting) continue;
-          links.forEach((l, i) => {
-            if (targets[i] === e.target) l.setAttribute('aria-current', 'true');
-            else l.removeAttribute('aria-current');
-          });
+          for (const link of navLinks) {
+            const href = link.getAttribute('href')!;
+            if (targets.get(href) === e.target) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
+          }
         }
       },
       { rootMargin: '-40% 0px -55% 0px' }
     );
-    targets.forEach((t) => t && io.observe(t));
+    targets.forEach((el) => el && headerIo!.observe(el));
+
+    const openBtn = document.getElementById('mobile-menu-open') as HTMLButtonElement | null;
+    const closeBtn = document.getElementById('mobile-menu-close') as HTMLButtonElement | null;
+    const menu = document.getElementById('mobile-menu') as HTMLDialogElement | null;
+    if (!openBtn || !closeBtn || !menu || menu.dataset.bound) return;
+    menu.dataset.bound = '1';
+
+    const resetMenuState = () => {
+      openBtn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    };
+
+    const closeMenu = () => {
+      resetMenuState();
+      if (menu.open) menu.close();
+    };
+
+    openBtn.addEventListener('click', () => {
+      if (menu.open) return;
+      menu.showModal();
+      openBtn.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+    });
+
+    closeBtn.addEventListener('click', closeMenu);
+
+    menu.addEventListener('cancel', resetMenuState);
+    menu.addEventListener('close', resetMenuState);
+
+    menu.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
   }
-  setupNavSpy();
-  document.addEventListener('astro:after-swap', setupNavSpy);
+
+  setupHeader();
+  document.addEventListener('astro:after-swap', setupHeader);
 </script>

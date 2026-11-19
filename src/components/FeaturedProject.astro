@@ -11,26 +11,16 @@ interface Props {
 const { project } = Astro.props;
 const { title, description, content, tags = [], link, mainImage = '', gallery = [], screenshot, screenshotAlt, icon } = project;
 
-// Missing data is never invented: dev shows example placeholders (bracketed values), production hides them.
-// The real numbers go in the project's `highlights` in Sanity.
-const EXAMPLES = [
-  { value: '[ej: 12.000]', label: 'páginas indexadas' },
-  { value: '[ej: 95+]', label: 'Lighthouse' },
-  { value: '[ej: SEO + front]', label: 'qué hice yo' },
-];
-const dev = import.meta.env.DEV;
-const highlights = (project.highlights?.length ? project.highlights : dev ? EXAMPLES : []).slice(0, 3);
+const highlights = (project.highlights ?? []).slice(0, 3);
 const scene = (ICON_OPTIONS.some((o) => o.value === icon) ? icon : 'search') as CardIcon;
 const contentHtml = content?.length ? toHTML(content) : description;
-const projectData = JSON.stringify({ title, description, contentHtml, tags, link, mainImage, gallery });
+const projectData = JSON.stringify({ title, description, contentHtml, tags, link, mainImage, gallery, screenshot });
 ---
 
-<article class="project-featured fade-up grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6 md:gap-10 bg-main-bg border border-stroke/50 rounded-[32px] p-5 md:p-7 mb-8 relative z-10" data-project={projectData}>
+<article class="project-featured fade-up grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6 md:gap-10 bg-main-bg border border-stroke/50 rounded-[32px] p-5 md:p-7 mb-14 relative z-10 cursor-pointer hover:-translate-y-0.5 hover:shadow-xl hover:shadow-accent-brown/5 transition-[transform,box-shadow] duration-300" data-project={projectData}>
   <div class="rounded-2xl overflow-hidden border border-stroke/70 bg-wave-bg aspect-[16/10] flex items-center justify-center">
     {screenshot ? (
       <img src={screenshot} srcset={shotSrcset(screenshot)} sizes="(min-width: 768px) 420px, calc(100vw - 90px)" alt={screenshotAlt ?? ''} class="w-full h-full object-cover object-top" loading="lazy" decoding="async" />
-    ) : dev ? (
-      <span class="text-[15px] text-text-dark/80">[captura real de {title}]</span>
     ) : (
       <Doodle name={scene} class="h-32 w-auto" />
     )}
@@ -42,21 +32,21 @@ const projectData = JSON.stringify({ title, description, contentHtml, tags, link
     <p class="text-lg leading-[155%] text-text-dark/90">{description}</p>
 
     {highlights.length > 0 && (
-      <dl class="grid grid-cols-3 gap-4 border-t border-text-dark/60 pt-3">
+      <dl class="grid grid-cols-3 gap-2 sm:gap-4 border-t border-accent-brown/20 pt-3">
         {highlights.map((h) => (
           <div>
-            <dt class="text-xl font-semibold text-accent-brown">{h.value}</dt>
-            <dd class="text-[15px] leading-tight text-text-dark/80">{h.label}</dd>
+            <dt class="text-lg sm:text-xl font-semibold text-accent-brown">{h.value}</dt>
+            <dd class="text-sm sm:text-[15px] leading-tight text-text-dark/80">{h.label}</dd>
           </div>
         ))}
       </dl>
     )}
 
     <div class="flex flex-wrap items-center gap-x-6 gap-y-1">
-      {link && link !== '#' && (
-        <a href={link} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center min-h-11 px-6 rounded-full bg-accent-brown text-main-bg text-base font-medium hover:shadow-lg active:scale-95 transition-all">Ver el sitio</a>
+      {link && /^https?:\/\//i.test(link) && (
+        <a href={link} target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center min-h-11 px-6 rounded-full bg-accent-brown text-main-bg text-base font-medium hover:shadow-lg active:scale-95 transition-all">Ver sitio</a>
       )}
-      <button type="button" class="inline-flex items-center min-h-11 text-base font-medium text-accent-brown underline underline-offset-4 decoration-accent-brown/50 hover:decoration-accent-brown cursor-pointer">Cómo lo hice</button>
+      <button type="button" class="inline-flex items-center min-h-11 text-base font-medium text-accent-brown underline underline-offset-4 decoration-accent-brown/60 hover:decoration-accent-brown cursor-pointer">Ver caso</button>
     </div>
   </div>
 </article>

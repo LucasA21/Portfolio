@@ -8,35 +8,36 @@
       <!-- Close Button -->
       <button 
         id="close-modal"
-        class="absolute top-6 right-6 z-40 p-2.5 bg-black/20 backdrop-blur-md hover:bg-black/40 rounded-full transition-all cursor-pointer group/close shadow-lg border border-white/10"
+        type="button"
+        class="absolute top-5 right-5 z-40 size-11 inline-flex items-center justify-center bg-main-bg/95 hover:bg-main-bg text-accent-brown rounded-full transition-all cursor-pointer group/close shadow-md border border-accent-brown/25"
         aria-label="Cerrar modal"
       >
-        <svg class="w-6 h-6 text-white transition-transform group-hover/close:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg class="w-5 h-5 transition-transform group-hover/close:rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
       </button>
 
       <!-- Top: Carousel -->
-      <div class="w-full h-[30%] md:h-[40%] relative group/carousel bg-black/90 shrink-0 cursor-zoom-in">
+      <div id="modal-carousel-wrap" class="w-full h-[30%] md:h-[40%] relative group/carousel bg-wave-bg shrink-0 cursor-zoom-in border-b border-stroke/60">
         <!-- Main Image -->
-        <div id="modal-image-container" role="button" tabindex="0" aria-label="Ampliar imagen del proyecto" class="w-full h-full relative overflow-hidden bg-black/95 focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white">
+        <div id="modal-image-container" role="button" tabindex="0" aria-label="Ampliar imagen del proyecto" class="w-full h-full relative overflow-hidden bg-wave-bg focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-accent-brown">
             <img 
                 id="modal-main-image" 
                 src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
                 alt="Imagen del proyecto (clic para ampliar)" 
-                class="absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-in-out scale-100 hover:scale-105" 
+                class="absolute inset-0 w-full h-full object-cover object-top transition-all duration-700 ease-in-out scale-100 hover:scale-105" 
             />
             <!-- Visual Hint for Lightbox -->
-            <div class="absolute bottom-4 right-4 z-20 flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white/90 pointer-events-none transition-all group-hover/carousel:bg-black/60 group-hover/carousel:scale-105">
-                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <div class="absolute bottom-4 right-4 z-20 flex items-center gap-2 px-3 py-1.5 bg-main-bg/90 backdrop-blur-md rounded-full border border-accent-brown/20 text-accent-brown pointer-events-none transition-all group-hover/carousel:bg-main-bg group-hover/carousel:scale-105 shadow-sm">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
                     <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
                 </svg>
-                <span class="text-[10px] uppercase font-bold tracking-widest hidden md:block">Clic para ampliar</span>
+                <span class="text-xs font-medium tracking-wide hidden md:block">Clic para ampliar</span>
             </div>
         </div>
 
         <!-- Carousel Dots Indicator -->
-        <div id="modal-dots-container" class="absolute bottom-4 inset-x-0 flex justify-center gap-2 z-30">
+        <div id="modal-dots-container" class="absolute bottom-2 inset-x-0 flex justify-center gap-1 z-30">
             <!-- Dots injected here -->
         </div>
       </div>
@@ -44,86 +45,74 @@
       <!-- Lightbox (Full Screen Gallery) -->
       <dialog 
         id="project-lightbox" 
-        class="fixed inset-0 w-full h-full bg-transparent border-none p-0 m-0 z-100 backdrop:bg-black/95 backdrop:backdrop-blur-2xl max-w-none max-h-none overflow-hidden"
+        class="fixed inset-0 w-full h-dvh bg-transparent text-white border-none p-0 m-0 z-100 backdrop:bg-black/95 backdrop:backdrop-blur-2xl max-w-none max-h-none overflow-hidden"
       >
-        <!-- Main Lightbox Image Container (Forced centering) -->
-        <div class="absolute inset-0 flex items-center justify-center bg-transparent pointer-events-none">
-            <div class="w-full flex items-center justify-center p-0 lg:p-24 pointer-events-none">
-                <img 
-                    id="lightbox-image" 
-                    src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
-                    alt="Vista ampliada" 
-                    class="w-full h-auto max-h-[75vh] lg:max-h-[90vh] lg:max-w-6xl object-contain shadow-2xl transition-all duration-300 pointer-events-none" 
-                />
-            </div>
-        </div>
-
-        <!-- UI Layer (Absolute elements) -->
-        <div class="fixed inset-0 w-full h-full pointer-events-none">
-            <!-- Close Lightbox -->
-            <button id="close-lightbox" class="absolute top-8 right-8 lg:top-12 lg:right-12 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 z-110 pointer-events-auto transition-all active:scale-90 shadow-2xl" aria-label="Cerrar vista ampliada">
-                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        <div class="w-full h-full flex flex-col justify-between p-4 sm:p-6 lg:p-10">
+          <!-- Top Bar -->
+          <div class="flex justify-end shrink-0">
+            <button id="close-lightbox" type="button" class="size-12 inline-flex items-center justify-center bg-black/60 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/25 transition-all active:scale-90 shadow-xl cursor-pointer" aria-label="Cerrar vista ampliada">
+              <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
- 
-            <!-- Lightbox Arrows -->
-            <div class="absolute inset-x-4 lg:inset-x-8 top-1/2 -translate-y-1/2 hidden lg:flex justify-between items-center pointer-events-none z-120">
-                <button id="lightbox-prev" class="p-4 md:p-6 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 pointer-events-auto transition-all active:scale-75 shadow-2xl" aria-label="Imagen anterior">
-                    <svg class="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-                <button id="lightbox-next" class="p-4 md:p-6 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/20 pointer-events-auto transition-all active:scale-75 shadow-2xl" aria-label="Imagen siguiente">
-                    <svg class="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l6 6-6 6"/></svg>
-                </button>
-            </div>
+          </div>
 
-            <!-- Mobile Swipe Hint -->
-            <div class="absolute bottom-24 inset-x-0 flex flex-col items-center gap-2 lg:hidden pointer-events-none animate-swipe-hint">
-                <div class="flex items-center gap-4 text-white/40">
-                  <svg class="w-5 h-5 animate-swipe-left" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
-                  <div class="w-10 h-1 bg-white/20 rounded-full overflow-hidden">
-                    <div class="w-full h-full bg-white/40 animate-swipe-bar"></div>
-                  </div>
-                  <svg class="w-5 h-5 animate-swipe-right" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
-                </div>
-                <span class="text-[9px] font-bold text-white/30 uppercase tracking-[0.3em] text-center">Deslizar para navegar</span>
-            </div>
+          <!-- Center Image -->
+          <div class="flex-1 min-h-0 flex items-center justify-center py-3 pointer-events-none">
+            <img 
+              id="lightbox-image" 
+              src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" 
+              alt="Vista ampliada" 
+              class="max-w-full max-h-full lg:max-w-6xl object-contain rounded-lg shadow-2xl transition-all duration-300" 
+            />
+          </div>
 
-            <!-- Counter -->
-            <div id="lightbox-counter" class="absolute bottom-10 inset-x-0 flex justify-center pointer-events-none">
-                <div class="px-6 py-2 bg-black/60 backdrop-blur-xl rounded-full text-white/80 font-medium text-xs border border-white/10 pointer-events-auto shadow-2xl">
-                    1 / 5
-                </div>
+          <!-- Bottom Controls -->
+          <div class="flex flex-col items-center gap-2 shrink-0">
+            <div id="lightbox-controls" class="flex items-center justify-center gap-4">
+              <button id="lightbox-prev" type="button" class="size-11 sm:size-12 inline-flex items-center justify-center bg-black/60 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/25 transition-all active:scale-90 cursor-pointer" aria-label="Imagen anterior">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div id="lightbox-counter" class="px-5 py-2 bg-black/75 backdrop-blur-xl rounded-full text-white font-medium text-xs border border-white/20 shadow-xl">
+                1 / 1
+              </div>
+              <button id="lightbox-next" type="button" class="size-11 sm:size-12 inline-flex items-center justify-center bg-black/60 hover:bg-white/20 text-white rounded-full backdrop-blur-xl border border-white/25 transition-all active:scale-90 cursor-pointer" aria-label="Imagen siguiente">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l6 6-6 6"/></svg>
+              </button>
             </div>
+            <span id="lightbox-swipe-hint" class="lg:hidden text-xs font-medium text-white/80 tracking-wide">Deslizá o usá las flechas</span>
+          </div>
         </div>
       </dialog>
 
       <!-- Bottom: Details -->
       <div class="flex-1 flex flex-col min-h-0 bg-main-bg relative md:rounded-r-[40px]">
-        <div class="flex-1 overflow-y-auto no-scrollbar px-8 md:px-16 pt-8 pb-32">
+        <div id="modal-details-scroll" class="flex-1 overflow-y-auto no-scrollbar px-8 md:px-16 pt-8 pb-28">
             <div class="mb-8">
-                <div id="modal-tags" class="flex flex-wrap gap-2 mb-4 opacity-60"></div>
+                <div id="modal-tags" class="flex flex-wrap gap-2 mb-4"></div>
                 <h2 id="modal-title" class="text-3xl md:text-5xl font-medium text-accent-brown tracking-tighter mb-4 leading-tight">
                     <span class="sr-only">Detalles del proyecto</span>
                 </h2>
+                <p id="modal-lead" class="text-lg md:text-xl leading-[160%] text-text-dark/90 text-pretty max-w-3xl"></p>
             </div>
 
             <div class="max-w-3xl">
-                <h3 class="text-xs font-bold tracking-[0.3em] text-accent-brown/30 uppercase mb-4 flex items-center gap-4">
+                <h3 class="text-xs font-bold tracking-[0.22em] text-accent-brown/80 uppercase mb-4 flex items-center gap-4">
                     Sobre el proyecto
-                    <span class="h-px grow bg-stroke/10"></span>
+                    <span class="h-px grow bg-accent-brown/20"></span>
                 </h3>
-                <div id="modal-description" class="rich-text text-base md:text-lg leading-[170%] opacity-80 font-normal text-pretty pr-4"></div>
+                <div id="modal-description" class="rich-text text-base md:text-lg leading-[170%] text-text-dark/90 font-normal text-pretty pr-4"></div>
             </div>
         </div>
 
         <!-- Sticky Footer for Link -->
-        <div class="absolute bottom-0 inset-x-0 p-8 md:p-10 md:px-16 bg-linear-to-t from-main-bg via-main-bg/80 to-transparent z-20 md:rounded-br-[40px]">
+        <div id="modal-link-wrap" class="absolute bottom-0 inset-x-0 p-6 md:p-8 md:px-16 bg-linear-to-t from-main-bg via-main-bg/90 to-transparent z-20 md:rounded-br-[40px]">
             <a 
                 id="modal-link" 
                 href="#" 
                 target="_blank" 
-                class="block w-full text-center bg-accent-brown text-main-bg py-4 rounded-2xl font-bold hover:bg-accent-brown/90 transition-all tracking-[0.2em] text-sm uppercase active:scale-[0.98] shadow-lg shadow-accent-brown/10 ring-1 ring-white/10"
+                rel="noopener noreferrer"
+                class="inline-flex items-center justify-center gap-2 w-full min-h-12 bg-accent-brown text-main-bg py-3.5 rounded-full font-medium hover:bg-accent-brown/90 transition-all tracking-wider text-base active:scale-[0.98] shadow-lg shadow-accent-brown/10"
             >
-                VISITAR SITIO
+                Ver sitio
             </a>
         </div>
       </div>
